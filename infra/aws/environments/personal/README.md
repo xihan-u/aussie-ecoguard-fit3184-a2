@@ -104,8 +104,9 @@ not evidence of AWS execution, federation, models or cloud acceptance.
 
 ## Plan procedure after prerequisites are satisfied
 
-These are review steps for a future authorized session, not evidence that a plan
-has been run. Terraform 1.10+ and the locked AWS provider are required. Run from the
+These commands describe the review procedure. The actual first saved plan and
+its checks are recorded in [the 24 October review](../../../../docs/c-personal-first-plans-20261024.md);
+no apply has occurred. Terraform 1.10+ and the locked AWS provider are required. Run from the
 repository root. On a local computer, prefix Terraform/STS commands with
 `AWS_PROFILE=ecoguard-personal` only after configuring/verifying that profile;
 omit that prefix in the verified CloudShell.
@@ -202,17 +203,19 @@ The fifteen focused first-plan tests and nine packaging-helper tests passed
 locally without cloud access or dependency downloads. `terraform validate`
 also passed for the new bucket/ownership configuration on macOS arm64 using Terraform
 1.17.0 and the officially signed AWS provider 6.67.0. The personal provider lock
-includes that platform's additional checksum; the course lock is unchanged.
-The earlier 18-test AWS infrastructure suite passed in the reviewed local ingest
-image with networking disabled; the expanded suite has not yet been rerun there.
-Host Python still lacks `botocore` for one existing shutdown check.
+includes verified macOS arm64 and Linux amd64 checksums; the course lock is unchanged.
+The expanded 25-test AWS infrastructure suite and nine packaging checks passed
+in the reviewed local ingest image with networking disabled, including the
+existing shutdown checks that require `botocore`.
 The real new ZIP build passed: 3,998 files, 72,766,834 bytes unpacked and
 33,286,409 bytes compressed, SHA-256
 `fafb94bf948312f1fef8998b5619567ad3c3471381a34e9e816cec87b034d9f6`.
 The helper's staged package imports and native-library operations passed in a
 network-disabled `python -S` container, using the actual staged dependencies.
-A real saved plan, role/bucket creation, deploy/apply, runtime tests,
-protected inference and WIF all remain unperformed.
+A real saved plan subsequently passed 28/28 checks in AWS CloudShell, with
+55 creates and no updates or deletes. See the linked 24 October review for its
+exact source and hashes. Role/bucket creation, deploy/apply, runtime tests,
+protected inference and WIF remain unperformed.
 
 Run the focused offline checker regression without cloud access or extra packages:
 

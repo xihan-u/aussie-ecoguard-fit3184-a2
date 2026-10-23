@@ -72,12 +72,14 @@ Historical resource addresses, roles, mapping and conditions are unchanged.
 Exit 0 confirms only these offline checks; 1 means rejected checks and 2 means
 invalid/incomplete input. It does not authorize applying, verify the AWS role,
 prove Google permissions or establish a working cross-cloud deployment. Review
-the textual plan too. No saved plan or apply has been performed by this preparation.
+the textual plan too. The actual seven-create saved plan passed 14/14 checks in
+GCP CloudShell; its source and hash are in [the 24 October review](../../../../docs/c-personal-first-plans-20261024.md).
+No apply or new IAM grant has occurred.
 A runtime deployment requires a different reviewed plan and verified funding;
 this root creates no Cloud Run service, model bucket or image registry.
 
 The provider lock retains the shared root's Google 7.46.1 checksums and adds the
-verified macOS arm64 checksum. Local `terraform validate` passed with Terraform
+verified macOS arm64 and Linux amd64 checksums. Local `terraform validate` passed with Terraform
 1.17.0 and the signature-verified Google provider 7.46.1. All 15 GCP offline tests
 passed, including nine new first-plan checks and the six existing identity checks.
 Run the focused regressions without cloud SDKs or Terraform:
