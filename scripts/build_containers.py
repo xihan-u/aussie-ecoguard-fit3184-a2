@@ -20,6 +20,8 @@ DOCKERFILES = {
     "inference": ROOT / "services/inference/Dockerfile",
     "aws-ingest": ROOT / "services/aws/Dockerfile",
 }
+# PowerShell recognizes these smart quotes as single-quote delimiters too.
+POWERSHELL_LITERAL_ESCAPES = str.maketrans({quote: quote * 2 for quote in "'\u2018\u2019\u201a\u201b"})
 
 
 def image_tag(value):
@@ -92,9 +94,11 @@ def build_command(args):
 
 
 def format_command(command):
+    """Render for display/copy only; this string is never executed by main."""
     if os.name == "nt":
         # PowerShell single quotes preserve spaces and metacharacters in paths.
-        return "& " + " ".join("'" + argument.replace("'", "''") + "'" for argument in command)
+        arguments = ("'" + argument.translate(POWERSHELL_LITERAL_ESCAPES) + "'" for argument in command)
+        return "& " + " ".join(arguments)
     return shlex.join(command)
 
 
@@ -128,7 +132,7 @@ def main(argv=None):
     try:
         check_docker()
         print(format_command(command), flush=True)
-        subprocess.run(command, cwd=ROOT, check=True)
+        subprocess.run(command, cwd=ROOT, check=True, shell=False)
     except (RuntimeError, OSError, subprocess.CalledProcessError) as error:
         print(f"Build failed: {error}", file=sys.stderr)
         return 1

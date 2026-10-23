@@ -93,6 +93,24 @@ python3 scripts/build_containers.py inference --image ecoguard-inference:c-20261
 PYTHONPATH=services/inference python3 -m unittest discover -s services/inference/tests -p test_settings.py -v
 ```
 
+## Build command security review
+
+SonarCloud flagged the command formatter and build execution. Review found a
+PowerShell copy/paste edge case: a checkout directory can contain smart single
+quotes, which PowerShell treats as string delimiters. The formatter now doubles
+all five PowerShell single-quote characters, following the
+[PowerShell quoting rules](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_quoting_rules).
+The ASCII CLI allowlists remain unchanged. Actual builds execute the argument
+list with explicit `shell=False`; the rendered command is display-only, as
+recommended by the [Python subprocess security guidance](https://docs.python.org/3/library/subprocess.html#security-considerations).
+
+All **11 build-helper tests passed**, including hostile CLI input rejection,
+smart-quote path rendering and mocked successful argv execution without a shell.
+PowerShell is not installed on this host, so the quoting regression checks the
+rendered literals rather than executing an external PowerShell process. No
+Sonar rule, quality gate or security annotation was disabled or marked resolved.
+The remote analysis result must be reviewed separately.
+
 ## Remaining C work
 
 Registry publication, a real Lambda ZIP, saved cloud plans, infrastructure apply,

@@ -132,6 +132,39 @@ class ContainerBuildTests(unittest.TestCase):
         with mock.patch.object(MODULE.os, "name", "nt"):
             self.assertEqual(MODULE.format_command(["docker", "a b/c'd"]), "& 'docker' 'a b/c''d'")
 
+    def test_powershell_output_keeps_smart_quote_paths_inside_literals(self):
+        paths = [
+            ("C:/repo‘;Write-Output PWNED;‘/src", "'C:/repo‘‘;Write-Output PWNED;‘‘/src'"),
+            ("C:/repo’;Write-Output PWNED;’/src", "'C:/repo’’;Write-Output PWNED;’’/src'"),
+            ("C:/repo‚;Write-Output PWNED;‚/src", "'C:/repo‚‚;Write-Output PWNED;‚‚/src'"),
+            ("C:/repo‛;Write-Output PWNED;‛/src", "'C:/repo‛‛;Write-Output PWNED;‛‛/src'"),
+        ]
+        with mock.patch.object(MODULE.os, "name", "nt"):
+            for path, literal in paths:
+                with self.subTest(path=path):
+                    self.assertEqual(MODULE.format_command(["docker", path]), "& 'docker' " + literal)
+
+    def test_build_executes_the_argument_list_without_a_shell(self):
+        responses = [subprocess.CompletedProcess([], 0, "linux\n", ""),
+                     subprocess.CompletedProcess([], 0, "buildx\n", ""),
+                     subprocess.CompletedProcess([], 0, "", "")]
+        with mock.patch.object(MODULE.shutil, "which", return_value="docker"), \
+                mock.patch.object(MODULE.subprocess, "run", side_effect=responses) as run, \
+                contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(MODULE.main(["inference", "--image", "ecoguard:test", "--build"]), 0)
+        build = run.call_args_list[-1]
+        self.assertIsInstance(build.args[0], list)
+        self.assertEqual(build.args[0], MODULE.build_command(
+            MODULE.parse_args(["inference", "--image", "ecoguard:test", "--build"])))
+        self.assertIs(build.kwargs["shell"], False)
+
+    def test_cli_rejects_shell_operators_and_injected_options(self):
+        for image in ("--push", "ecoguard:x;Write-Output PWNED", "ecoguard:x$(id)", "ecoguard:x\n--push"):
+            with self.subTest(image=image), contextlib.redirect_stderr(io.StringIO()):
+                with self.assertRaises(SystemExit) as error:
+                    MODULE.parse_args(["inference", "--image=" + image])
+                self.assertEqual(error.exception.code, 2)
+
 
 if __name__ == "__main__":
     unittest.main()
