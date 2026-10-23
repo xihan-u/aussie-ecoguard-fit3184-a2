@@ -15,7 +15,10 @@ and was subsequently applied under its matching approval. The repository was
 empty at the post-apply check. The approved inference image has since been
 published and its actual manifest/config bytes verified; see the
 [image publication report](../../../../docs/c-private-image-published-20261024.md).
-Private inference remains a separate reviewed increment. The earlier
+The second real private-inference saved plan now passed **13/13 checks** with
+four creates, nine no-ops and no drift, warnings or unknown security fields;
+see the [private-service plan review](../../../../docs/c-private-inference-saved-plan-review-20261024.md).
+It has not been applied or authorized for execution. The earlier
 [saved-plan review](../../../../docs/c-registry-saved-plan-review-20261024.md)
 and deployment reports retain their respective historical observations.
 The default stage is `identity`; committing this source does not activate compute. The child module's historical
@@ -25,9 +28,11 @@ The default stage is `identity`; committing this source does not activate comput
 
 The authoritative personal backend is the existing GCP CloudShell workspace
 `~/ecoguard-c-personal-20261023/source/infra/gcp/environments/personal/state/terraform.tfstate`.
-Its controlled checkout remains at `00d58e0` for the applied registry increment;
-the original identity source was `fdfaf23`. Preserve the private nine-resource
-post-apply backup and use one operator. Git does not
+After the exact state-only publication metadata refresh at `00d58e0`, the
+controlled checkout moved to `3dd63c8` for the second private-service plan.
+The current state still has nine resources, serial 12. The verified checkpoint
+retains private A/B backups; state, lock and `.gitignore` were unchanged across
+the source transition. Preserve that checkpoint and use one operator. Git does not
 share state. Do not create a second owner, copy/import the historical team's
 state, or initialize this local clone and apply against an empty state.
 
@@ -42,7 +47,7 @@ not an upgrade. Keep full plans, JSON, logs and backups in ignored `private/`.
 | --- | --- | --- |
 | `identity` (default) | Historical seven-resource baseline; returning from nine proposes removal | None |
 | `registry` | Applied: seven no-ops, two creates; current nine total | Artifact Registry API and private Docker repository |
-| `private-inference` | Nine no-ops, four creates; thirteen total | Run API, dedicated runtime account, service and one service-level invoker grant |
+| `private-inference` | Real plan passed: nine no-ops, four creates; thirteen proposed total, not applied | Run API, dedicated runtime account, service and one service-level invoker grant |
 
 The stages preserve existing addresses. The personal route omits the unused GCS
 model bucket, storage API and bucket-reader grant: the unchanged locked manifest
@@ -56,9 +61,10 @@ verified this actual immutable image URI:
 
 `us-central1-docker.pkg.dev/ecoguard-fit3184-a2-2026/ecoguard/inference@sha256:7e481399309c8a90276c864e9765545657e44c00e9061ee668b4e56db4f22fdb`
 
-The raw remote manifest/config matched the reviewed archive. Publication leaves
-Terraform state at nine resources and does not establish a passing private-service
-plan, runtime approval or cloud inference.
+The raw remote manifest/config matched the reviewed archive. The subsequent
+private-service plan verified that provenance through its exact metadata refresh
+checkpoint. State remains at nine resources; runtime approval and cloud inference
+remain outstanding.
 
 The root fixes the actual AWS account/role/region, Cognito issuer/client, media
 bucket and manifest hash. It permits no arbitrary environment override. Existing
@@ -67,9 +73,10 @@ WIF access remains limited to normalized assumed role
 `ecoguard-aws-invoker@ecoguard-fit3184-a2-2026.iam.gserviceaccount.com`.
 CloudShell/root is not this runtime role; do not broaden trust to simplify tests.
 
-The future service explicitly checks invoker IAM. Its sole new grant is
+The proposed service explicitly checks invoker IAM and HTTP/1 on port 8080.
+Its sole new grant is
 `roles/run.invoker` on `ecoguard-inference` to that existing invoker account.
-There is no public or project-wide grant. The dedicated runtime account receives
+Invoker access adds no public or project-wide invoker role. The dedicated runtime account receives
 no new IAM role. The service uses four CPUs, 8 GiB, request concurrency one,
 minimum zero, automatic service/revision maximum one, request timeout 360s and application deadline
 240s. These are reviewed limits, not proven cloud performance or a hard cost cap.
@@ -107,10 +114,15 @@ The [preparation evidence](../../../../evidence/c-private-inference-prepared-202
 Inspect the textual saved plan too, freeze its binary hash and recheck the live
 identity/state immediately before applying that same binary.
 
-Exit 0 only confirms offline constraints; it does not authorize apply, verify
-funding or image provenance, or prove cloud operation. New runtime access and
-funded testing require a concrete execution review. Google can initialize its
-own service agents when APIs are enabled; include that setup in the review.
+Exit 0 only confirms offline constraints. This plan's provenance and refresh
+checkpoint were additionally checked against retained successful evidence;
+funding and runtime operation still require separate verification. A new actual
+approval must cover the exact four-create saved binary, service invoker access,
+startup compute and Google's automatic Run service agent with
+`roles/run.serviceAgent`. The prepared apply/HTTP helpers do not confer approval.
+If approved separately, bounded HTTP testing consists of anonymous health,
+operator-authenticated health and one authenticated warmup. A cold warmup may
+download 15 files totaling 2,229,943,281 bytes; none has run under this plan.
 
 ## Actual local checks and remaining work
 
@@ -123,9 +135,12 @@ increment regressions. These regression tests use synthetic plans. A separate
 real registry plan passed its 12 checks and the approved apply now completed,
 with nine-resource state and live configuration verification. The actual image
 publication then passed remote digest/byte verification without changing that
-state or IAM. The two-create registry gate is historical for that transition;
-the next private increment must use the existing nine-resource state and verified
-image digest.
+state or IAM. The first private-service plan was retained as blocked (11/13)
+because of an unknown protocol name and publication metadata drift. Explicit
+`http1` and a separate exact state-only refresh resolved those issues without
+weakening the gate. The second real plan passed 13/13 with the existing nine
+resources unchanged; its concrete source, plan hash and checkpoint chain are in
+the linked plan review. No private-service apply or HTTP warmup has occurred.
 
 ```sh
 python3 -m unittest discover -s infra/gcp/tests -v
@@ -145,6 +160,9 @@ is no automatic cleanup or guaranteed account-wide spend stop. Stepping back to
 an earlier stage is a destructive reverse increment that needs its own reviewed
 plan, retained artifacts and state backup; the forward gate rejects it.
 
-Prepared with Codex assistance. Source preparation and the separately approved
-registry deployment are recorded independently; private inference remains a
-later reviewed increment.
+Source/evidence delivery now targets the approved
+[private repository](https://github.com/xihan-u/aussie-ecoguard-fit3184-a2-private).
+Full state, plans, policies, approval records and credentials remain outside Git.
+
+Prepared with Codex assistance. Private inference remains a reviewed plan awaiting
+new execution approval.
