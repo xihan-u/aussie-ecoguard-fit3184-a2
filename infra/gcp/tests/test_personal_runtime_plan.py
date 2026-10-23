@@ -59,7 +59,7 @@ def fixture_plan(stage):
             "template": [{"service_account": GATE.RUNTIME_EMAIL, "timeout": "360s",
                 "max_instance_request_concurrency": 1,
                 "scaling": [{"min_instance_count": 0, "max_instance_count": 1}],
-                "containers": [{"image": IMAGE, "ports": [{"container_port": 8080}],
+                "containers": [{"image": IMAGE, "ports": [{"name": "http1", "container_port": 8080}],
                     "resources": [{"limits": {"cpu": "4", "memory": "8Gi"},
                         "cpu_idle": True, "startup_cpu_boost": True}],
                     "env": [{"name": name, "value": value}
@@ -267,6 +267,7 @@ class PersonalRuntimePlanTests(unittest.TestCase):
             lambda v: v["template"][0].update(max_instance_request_concurrency=80),
             lambda v: v["template"][0]["scaling"][0].update(min_instance_count=1),
             lambda v: v["template"][0]["scaling"][0].update(max_instance_count=2),
+            lambda v: v["template"][0]["containers"][0]["ports"][0].update(name="h2c"),
             lambda v: v["template"][0]["containers"][0]["resources"][0]["limits"].update(cpu="8"),
             lambda v: v["template"][0]["containers"][0]["resources"][0]["limits"].update(memory="16Gi"),
             lambda v: v["template"][0]["containers"][0]["resources"][0].update(cpu_idle=False),
@@ -325,6 +326,8 @@ class PersonalRuntimePlanTests(unittest.TestCase):
                                (GATE.SERVICE, {"template": [{"sandboxes": True}]}),
                                (GATE.SERVICE, {"template": [{"vpc_access": True}]}),
                                (GATE.SERVICE, {"template": [{"containers": [{"base_image_uri": True}]}]}),
+                               (GATE.SERVICE, {"template": [{"containers": [{"ports": True}]}]}),
+                               (GATE.SERVICE, {"template": [{"containers": [{"ports": [{"name": True}]}]}]}),
                                (GATE.SERVICE, {"template": [{"containers": [{"sandbox_launcher": True}]}]}),
                                (GATE.INVOKER, {"member": True}),
                                (GATE.REPOSITORY, {"project": True})):

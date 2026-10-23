@@ -189,6 +189,7 @@ def runtime_is_exact(values, image):
         and not container.get("base_image_uri")
         and container.get("sandbox_launcher") in (None, False)
         and len(container.get("ports", [])) == 1 and container["ports"][0].get("container_port") == 8080
+        and container["ports"][0].get("name") == "http1"
         and len(resources) == 1 and resources[0].get("limits") == {"cpu": "4", "memory": "8Gi"}
         and resources[0].get("cpu_idle") is True and resources[0].get("startup_cpu_boost") is True
         and len(env) == len(RUNTIME_ENV)

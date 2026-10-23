@@ -98,7 +98,10 @@ resource "google_cloud_run_v2_service" "inference" {
     }
     containers {
       image = var.image
-      ports { container_port = 8080 }
+      ports {
+        name           = "http1"
+        container_port = 8080
+      }
       resources {
         limits            = { cpu = "4", memory = "8Gi" }
         cpu_idle          = true
