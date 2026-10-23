@@ -136,7 +136,12 @@ resource "aws_lambda_event_source_mapping" "zip_queues" {
   batch_size              = 1
   enabled                 = var.runtime_enabled && (each.key != "infer" || local.processing_ready)
   function_response_types = ["ReportBatchItemFailures"]
-  scaling_config { maximum_concurrency = 2 }
+  # AWS validates this cap even when a new mapping is disabled. Omit it while
+  # the function's reserved concurrency is zero; keep the live queue cap at 2.
+  dynamic "scaling_config" {
+    for_each = var.runtime_enabled ? [true] : []
+    content { maximum_concurrency = 2 }
+  }
 }
 resource "aws_lambda_event_source_mapping" "ingest" {
   count                   = local.has_worker ? 1 : 0
@@ -145,7 +150,10 @@ resource "aws_lambda_event_source_mapping" "ingest" {
   batch_size              = 1
   enabled                 = var.runtime_enabled && local.processing_ready
   function_response_types = ["ReportBatchItemFailures"]
-  scaling_config { maximum_concurrency = 2 }
+  dynamic "scaling_config" {
+    for_each = var.runtime_enabled ? [true] : []
+    content { maximum_concurrency = 2 }
+  }
 }
 resource "aws_s3_bucket_notification" "uploads" {
   count  = local.processing_ready ? 1 : 0

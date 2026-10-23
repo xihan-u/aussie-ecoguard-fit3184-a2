@@ -192,6 +192,9 @@ def inspect_plan(document):
     check("all_functions_use_dedicated_execution_role", all(f.get("role") == EXECUTION_ROLE for f in functions))
     check("queue_pollers_paused", all(values(f'aws_lambda_event_source_mapping.zip_queues["{name}"]').get("enabled") is False
                                      for name in ("infer", "delete", "notify")))
+    check("paused_queue_scaling_config_omitted", all(
+        values(f'aws_lambda_event_source_mapping.zip_queues["{name}"]').get("scaling_config", []) == []
+        for name in ("infer", "delete", "notify")))
     check("maintenance_paused", all(values(f'aws_cloudwatch_event_rule.maintenance["{name}"]').get("state") == "DISABLED"
                                    for name in ("outbox", "cleanup")))
     check("http_api_paused", values("aws_apigatewayv2_api.app[0]").get("disable_execute_api_endpoint") is True)

@@ -156,6 +156,14 @@ explicit local frontend origins and their reviewed method sets; wildcard or
 additional origins/methods fail. These checks inspect planned configuration;
 they do not claim live IAM, HTTPS or browser verification.
 
+Paused SQS mappings omit `scaling_config` while their target functions retain
+reserved concurrency zero. A disabled mapping with `maximum_concurrency=2`
+still conflicts with that function reservation during AWS creation. The
+first-plan gate rejects such a cap even when the mapping is disabled. A future
+authorized runtime activation restores the existing queue cap of two; this fix
+does not enable pollers or increase the functions' concurrency. See the
+[AWS SQS scaling guide](https://docs.aws.amazon.com/lambda/latest/dg/services-sqs-scaling.html).
+
 There is no `apply` command in this preparation. Deployment authorization and a
 review of the concrete saved plan remain prerequisites. A fresh plan must replace
 a stale one after configuration, package, state or account changes.
@@ -199,7 +207,7 @@ or matching us-east-1 Lambda, ECR, DynamoDB, SQS, SNS, EventBridge, API Gateway,
 Cognito or CloudWatch Logs resources, without API errors. An earlier narrower
 Lambda/ECR/Cognito/API check also covered ap-southeast-2. These checks describe
 those names/services/regions, not an account-wide emptiness claim.
-The fifteen focused first-plan tests and nine packaging-helper tests passed
+The sixteen focused first-plan tests and nine packaging-helper tests passed
 locally without cloud access or dependency downloads. `terraform validate`
 also passed for the new bucket/ownership configuration on macOS arm64 using Terraform
 1.17.0 and the officially signed AWS provider 6.67.0. The personal provider lock

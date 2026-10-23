@@ -51,7 +51,7 @@ def plan_fixture():
             "reserved_concurrent_executions": 0, "runtime": "python3.12", "architectures": ["x86_64"],
             "function_name": f"{GATE.PREFIX}-{name}", "role": GATE.EXECUTION_ROLE})
     for name in ("infer", "delete", "notify"):
-        index[f'aws_lambda_event_source_mapping.zip_queues["{name}"]']["enabled"] = False
+        index[f'aws_lambda_event_source_mapping.zip_queues["{name}"]'].update({"enabled": False, "scaling_config": []})
     for name in ("outbox", "cleanup"):
         index[f'aws_cloudwatch_event_rule.maintenance["{name}"]']["state"] = "DISABLED"
     for name in GATE.TABLES:
@@ -158,6 +158,25 @@ class PersonalFirstPlanTests(unittest.TestCase):
                 plan = plan_fixture()
                 value(plan, address)[key] = changed
                 self.assertEqual(GATE.inspect_plan(plan)["status"], "blocked")
+
+    def test_disabled_zero_concurrency_mappings_cannot_keep_a_positive_scaling_cap(self):
+        # AWS rejects creation with MaximumConcurrency=2 even if enabled=false
+        # when the target Lambda has reserved concurrency zero.
+        plan = plan_fixture()
+        for name in ("infer", "delete", "notify"):
+            value(plan, f'aws_lambda_event_source_mapping.zip_queues["{name}"]').pop("scaling_config")
+        self.assertEqual(GATE.inspect_plan(plan)["status"], "offline-first-plan-passed")
+        for name in ("infer", "delete", "notify"):
+            with self.subTest(name=name):
+                plan = plan_fixture()
+                mapping = value(plan, f'aws_lambda_event_source_mapping.zip_queues["{name}"]')
+                self.assertFalse(mapping["enabled"])
+                self.assertEqual(value(plan, f'aws_lambda_function.zip["{name}"]')["reserved_concurrent_executions"], 0)
+                mapping["scaling_config"] = [{"maximum_concurrency": 2}]
+                report = GATE.inspect_plan(plan)
+                self.assertEqual(report["status"], "blocked")
+                self.assertFalse(next(check["passed"] for check in report["checks"]
+                                      if check["name"] == "paused_queue_scaling_config_omitted"))
 
     def test_broader_permissions_trust_and_subscription_conditions_fail(self):
         for change in ("wildcard", "extra_action", "region", "email", "trust", "attached_admin", "shared_role", "role_path", "unknown_path"):
