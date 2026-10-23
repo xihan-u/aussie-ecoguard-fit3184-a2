@@ -36,6 +36,15 @@ The same helper's AWS ingest target separately requires the explicit committed
 RIC version `--aws-lambda-ric-version 4.2.2`; its hash lock and installation gates
 are documented in [AWS container build preparation](../aws/ENVIRONMENT.md#container-build-preparation).
 
+Keep the PyTorch CPU extra index in `requirements.lock.txt`, immediately after
+its PyPI `--index-url`. pip resets the command-line index list when it reads a
+requirements-file `--index-url`, so a Docker command-line extra index alone
+cannot resolve the locked `torch==2.14.1+cpu`. Preserve both index directives
+when regenerating the lock; the current uv generation header records the
+original command, which omitted the extra index. No package versions changed
+in this repair. See the [local build record](../../docs/c-local-build-20261023.md)
+for the actual validation scope.
+
 Deploy Cloud Run with 4 vCPU, 8 GiB, request concurrency 1, minimum instances 0,
 maximum instances 1 and a 360-second request timeout. These are unbenchmarked
 starting limits. Use `/healthz` for startup/liveness. `/readyz` is 503 until both

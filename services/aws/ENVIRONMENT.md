@@ -34,8 +34,10 @@ with the unchanged business lock in one `pip install --require-hashes`, restrict
 the three RIC packages to wheels and finishes with `pip check`. A missing compatible
 locked wheel stops installation. Version upgrades
 must review the full dependency closure, official hashes and any overlap with the
-business lock together; incompatible pins stop installation. This is a static
-build repair; no real image build or ingest runtime has been verified by it.
+business lock together; incompatible pins stop installation. The 2026-10-23
+local Linux amd64 build and offline import/tool checks passed; see the
+[local build record](../../docs/c-local-build-20261023.md). These checks do not
+establish a deployed ingest pipeline or cloud acceptance.
 
 Only `python:3.12-slim[-bookworm]@sha256:<64 hex characters>` is accepted; a bare
 tag is rejected. The helper passes `--build-arg BASE_IMAGE=...` without resolving
