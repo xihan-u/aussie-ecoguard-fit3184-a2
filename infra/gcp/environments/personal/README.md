@@ -42,6 +42,8 @@ Postchecks retained three observed differences rather than changing the deployme
 
 ## Bounded HTTP/model validation
 
+The [first actual anonymous request](../../../../docs/c-private-http-first-attempt-20261024.md) returned a platform-style 404 on `/healthz` and stopped the test before authenticated calls or warmup. It is inconclusive for IAM denial. Non-z `/health` and `/ready` aliases are prepared in source and verified offline; they are not yet deployed by this record.
+
 The user explicitly authorized exactly three requests without retry: anonymous `GET /healthz`, operator-authenticated `GET /healthz`, and authenticated `POST /v1/warmup {}` with a 270-second client cap. The [HTTP helper](../../../../scripts/verify_personal_gcp_private_inference_http.py) requires the actual successful configuration audit, original approval, immutable plan/image/state and fresh eligible-credit evidence. It uses the existing operator identity without new grants, impersonation, static keys or persisted tokens.
 
 The cold warmup may download 15 locked artifacts totaling **2,229,943,281 bytes**. Report its actual outcome separately from startup readiness. Even a successful warmup does not prove AWS-role token exchange, real cloud media inference, video processing, browser CORS or two-user acceptance. The earlier [local real-model smoke](../../../../docs/c-local-real-model-smoke-20261024.md) is local evidence only.

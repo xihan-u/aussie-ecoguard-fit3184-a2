@@ -47,8 +47,13 @@ for the actual validation scope.
 
 Deploy Cloud Run with 4 vCPU, 8 GiB, request concurrency 1, minimum instances 0,
 maximum instances 1 and a 360-second request timeout. These are unbenchmarked
-starting limits. Use `/healthz` for startup/liveness. `/readyz` is 503 until both
-real models have loaded; it does not download weights. An authenticated
+starting limits. Use `/health` for startup/liveness and `/ready` for model
+readiness. `/ready` is 503 until both real models have loaded; it does not
+download weights. `/healthz` and `/readyz` remain compatibility aliases for
+existing local/Oracle callers. For Cloud Run, use the paths without a final `z`:
+Google documents reserved paths ending in `z` that may be intercepted before
+the application. [Cloud Run reserved URL paths](https://docs.cloud.google.com/run/docs/known-issues#reserved-url-paths).
+Cloud Run IAM still protects both probe aliases at the service boundary. An authenticated
 `POST /v1/warmup` can load and verify them before a demo. IAM must reject
 unauthenticated callers; only the dedicated WIF impersonated invoker service
 account receives `roles/run.invoker`. Never grant `allUsers` or
