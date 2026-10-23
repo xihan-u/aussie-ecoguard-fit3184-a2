@@ -12,9 +12,12 @@ unverified.
 
 The registry saved plan passed **12/12 checks**, with two creates and seven no-ops,
 and was subsequently applied under its matching approval. The repository was
-empty at the post-apply check; this record does not claim image publication.
-Private inference has not yet been planned. See the earlier [saved-plan review](../../../../docs/c-registry-saved-plan-review-20261024.md)
-for its pre-apply snapshot and the deployment report for the actual result.
+empty at the post-apply check. The approved inference image has since been
+published and its actual manifest/config bytes verified; see the
+[image publication report](../../../../docs/c-private-image-published-20261024.md).
+Private inference remains a separate reviewed increment. The earlier
+[saved-plan review](../../../../docs/c-registry-saved-plan-review-20261024.md)
+and deployment reports retain their respective historical observations.
 The default stage is `identity`; committing this source does not activate compute. The child module's historical
 `deployment.auto.tfvars` is not loaded by this separate root.
 
@@ -48,9 +51,14 @@ module defaults retain their previous model storage and deletion protection.
 
 The personal image is empty before `private-inference`. That stage requires
 `us-central1-docker.pkg.dev/ecoguard-fit3184-a2-2026/ecoguard/inference@sha256:<64 lowercase hex>`.
-Tags and other registries/paths are rejected. Publish and independently verify
-the actual image before making its service plan. No image was published by the
-local preparation batch.
+Tags and other registries/paths are rejected. The separately approved publication
+verified this actual immutable image URI:
+
+`us-central1-docker.pkg.dev/ecoguard-fit3184-a2-2026/ecoguard/inference@sha256:7e481399309c8a90276c864e9765545657e44c00e9061ee668b4e56db4f22fdb`
+
+The raw remote manifest/config matched the reviewed archive. Publication leaves
+Terraform state at nine resources and does not establish a passing private-service
+plan, runtime approval or cloud inference.
 
 The root fixes the actual AWS account/role/region, Cognito issuer/client, media
 bucket and manifest hash. It permits no arbitrary environment override. Existing
@@ -113,9 +121,11 @@ provider startup failed before schema checking; the Linux result resolves that
 local validation gap. All **38 GCP offline tests** passed, including 23 new
 increment regressions. These regression tests use synthetic plans. A separate
 real registry plan passed its 12 checks and the approved apply now completed,
-with nine-resource state and live configuration verification. The two-create
-registry gate is historical for that transition; the next private increment
-must use the existing nine-resource state.
+with nine-resource state and live configuration verification. The actual image
+publication then passed remote digest/byte verification without changing that
+state or IAM. The two-create registry gate is historical for that transition;
+the next private increment must use the existing nine-resource state and verified
+image digest.
 
 ```sh
 python3 -m unittest discover -s infra/gcp/tests -v
