@@ -6,10 +6,12 @@ historical configuration, not evidence that the current operator can use them.
 Keep its `identity_only=true` setting until a separate deployment is authorized.
 
 The new project is `ecoguard-fit3184-a2-2026`, project number `995070689587`.
-Use the [separate personal identity-only root](environments/personal/README.md)
-for its reviewed setup: it has fixed personal project/AWS inputs, its own local
-backend and an offline first-plan gate. It does not create trust merely by being
-committed, and the intended AWS execution role must still be created and verified.
+Use the [separate personal root](environments/personal/README.md) for its reviewed
+setup: it has fixed project/AWS inputs, its own local backend and separate
+first-plan/increment gates. Its seven identity resources have been applied after
+verifying the actual AWS role. The current source additionally prepares explicit
+registry and private-inference stages, neither deployed yet; its default retains
+identity only. Do not use the generic example below against that existing state.
 
 `ecoguard-fit3184-a2-2026.tfvars.json.example` is an explicit, non-auto-loading
 generic starting point for IAM/WIF configuration. It deliberately leaves the AWS

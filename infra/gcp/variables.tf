@@ -1,8 +1,34 @@
 variable "project_id" { type = string }
 variable "identity_only" {
   type        = bool
-  description = "Only free IAM/WIF identity resources. No Cloud Run, model storage or registry."
+  description = "IAM/WIF only by default; prepare_registry may explicitly add its registry/API. No inference compute or model storage while true."
   default     = true
+}
+variable "prepare_registry" {
+  type        = bool
+  description = "Opt in to the image registry/API while retaining identity_only=true; no runtime service or invoker grant."
+  default     = false
+}
+variable "model_storage_enabled" {
+  type        = bool
+  description = "Retain the historical runtime model bucket/API/reader by default; disable only when locked artifacts use direct HTTPS."
+  default     = true
+}
+variable "inference_deletion_protection" {
+  type        = bool
+  description = "Protect historical inference services by default; a bounded personal deployment may explicitly allow reviewed cleanup."
+  default     = true
+}
+variable "inference_service_max_instances" {
+  type        = number
+  description = "Optional service-wide automatic scaling cap; null preserves historical revision-only scaling."
+  default     = null
+  validation {
+    condition = var.inference_service_max_instances == null ? true : (
+      var.inference_service_max_instances >= 1 && floor(var.inference_service_max_instances) == var.inference_service_max_instances
+    )
+    error_message = "An explicit service instance cap must be a positive integer."
+  }
 }
 variable "region" {
   type    = string
