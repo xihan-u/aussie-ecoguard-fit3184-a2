@@ -57,9 +57,11 @@ resource "google_iam_workload_identity_pool_provider" "aws" {
   aws { account_id = var.aws_account_id }
 }
 resource "google_service_account_iam_member" "aws_invoker" {
-  service_account_id = google_service_account.invoker.name
+  # These canonical strings retain dependencies through configured resource IDs
+  # while making the exact first-plan IAM target/principal reviewable before apply.
+  service_account_id = "projects/${var.project_id}/serviceAccounts/${google_service_account.invoker.account_id}@${var.project_id}.iam.gserviceaccount.com"
   role               = "roles/iam.workloadIdentityUser"
-  member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.aws.name}/attribute.aws_role/arn:aws:sts::${var.aws_account_id}:assumed-role/${var.aws_role_name}"
+  member             = "principalSet://iam.googleapis.com/projects/${data.google_project.current.number}/locations/global/workloadIdentityPools/${google_iam_workload_identity_pool.aws.workload_identity_pool_id}/attribute.aws_role/arn:aws:sts::${var.aws_account_id}:assumed-role/${var.aws_role_name}"
 }
 resource "google_cloud_run_v2_service" "inference" {
   count               = !var.identity_only && var.image != "" ? 1 : 0

@@ -6,8 +6,13 @@ historical configuration, not evidence that the current operator can use them.
 Keep its `identity_only=true` setting until a separate deployment is authorized.
 
 The new project is `ecoguard-fit3184-a2-2026`, project number `995070689587`.
+Use the [separate personal identity-only root](environments/personal/README.md)
+for its reviewed setup: it has fixed personal project/AWS inputs, its own local
+backend and an offline first-plan gate. It does not create trust merely by being
+committed, and the intended AWS execution role must still be created and verified.
+
 `ecoguard-fit3184-a2-2026.tfvars.json.example` is an explicit, non-auto-loading
-starting point for that project's IAM/WIF setup. It deliberately leaves the AWS
+generic starting point for IAM/WIF configuration. It deliberately leaves the AWS
 identity unconfirmed and clears historical application settings. Creating a GCP
 project does not authorize the team's AWS account or establish free compute.
 
