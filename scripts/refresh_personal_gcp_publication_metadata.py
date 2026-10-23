@@ -132,7 +132,8 @@ def common():
     require(prior[REPO].get("labels") is None and prior[REPO].get("update_time") == OLD_TIME, "Old computed metadata is not the observed exact baseline")
     repo = m.cloud("artifacts", "repositories", "describe", "ecoguard", "--location=us-central1", "--project=" + PROJECT)
     require(repo.get("name") == m.REPOSITORY and repo.get("format") == "DOCKER" and repo.get("mode") == "STANDARD_REPOSITORY"
-            and repo.get("labels", {}) == {} and repo.get("updateTime") == NEW_TIME
+            and prior[REPO].get("effective_labels") == {"goog-terraform-provisioned": "true"}
+            and repo.get("labels") == prior[REPO]["effective_labels"] and repo.get("updateTime") == NEW_TIME
             and not repo.get("remoteRepositoryConfig") and not repo.get("virtualRepositoryConfig"), "Live repository metadata/config differs")
     policies, identities = m.private_policies(), identity(m)
     require(STATE.read_bytes() == original, "State changed during preflight")
