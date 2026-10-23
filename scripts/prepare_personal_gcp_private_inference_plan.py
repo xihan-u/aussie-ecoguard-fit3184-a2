@@ -1,10 +1,10 @@
 """Prepare one frozen private-inference saved plan; never apply or enable APIs.
 
 Run only in the existing Google CloudShell state-owning workspace, after the
-operator has published and independently verified the actual image digest:
+operator has published the image and completed the exact state-only metadata refresh:
   python3 THIS_FILE --image us-central1-docker.pkg.dev/ecoguard-fit3184-a2-2026/ecoguard/inference@sha256:ACTUAL_DIGEST
 The image argument has no default. This helper checks its exact path/digest form,
-not image provenance. It retains private artifacts and refuses to overwrite an
+actual image provenance from the retained successful publication and refresh checkpoint. It retains private artifacts and refuses to overwrite an
 attempt. A blocked plan, missing API, unknown security field or failed gate stops
 the workflow; this helper cannot enable APIs, change source, retry or apply.
 """
@@ -25,11 +25,14 @@ SOURCE = BASE / "source"
 ROOT = SOURCE / "infra/gcp/environments/personal"
 STATE = ROOT / "state/terraform.tfstate"
 PRIVATE = ROOT / "private"
-PREVIOUS = PRIVATE / "registry-plan-20261024-1/apply-20261024-1"
-ATTEMPT = PRIVATE / "private-inference-plan-20261024-1"
+ORIGINAL = PRIVATE / "registry-plan-20261024-1/apply-20261024-1"
+REFRESH = PRIVATE / "registry-publication-refresh-20261024-1"
+PREVIOUS = REFRESH / "apply-20261024-1"
+ATTEMPT = PRIVATE / "private-inference-plan-20261024-2"
 TF = Path("/tmp/ecoguard-c-personal-20261023/tools/terraform")
 DATA = Path("/tmp/ecoguard-c-personal-20261023/terraform-data-gcp")
-HEAD = "00d58e0e8c65321cc759d575eafaba801c1e8253"
+HEAD = "3dd63c805b625fb3b378ac977d51c6959d599f0c"
+HISTORICAL_HEAD = "00d58e0e8c65321cc759d575eafaba801c1e8253"
 PROJECT, NUMBER = "ecoguard-fit3184-a2-2026", "995070689587"
 REGISTRY_PLAN_SHA = "0f62543fe74a7b0fc71e9e8c2b1930de853448d1ab4c257b9d215399c9d5ba86"
 IMAGE_PATTERN = re.compile(r"us-central1-docker\.pkg\.dev/ecoguard-fit3184-a2-2026/ecoguard/inference@sha256:[0-9a-f]{64}")
@@ -102,20 +105,44 @@ def preflight(image):
     require(run(["git", "-C", SOURCE, "hash-object", ROOT / ".terraform.lock.hcl"])
             == run(["git", "-C", SOURCE, "rev-parse", HEAD + ":infra/gcp/environments/personal/.terraform.lock.hcl"]), "Provider lock differs from frozen source")
     original = STATE.read_bytes()
-    require(original == (PREVIOUS / "post-state-final.tfstate").read_bytes(), "State differs from verified registry post-apply backup")
+    require(original == (PREVIOUS / "post-state-final.tfstate").read_bytes(), "State differs from exact publication-metadata refresh checkpoint")
     raw = json.loads(original)
     instances = [i for r in raw["resources"] if r.get("mode") == "managed" for i in r.get("instances", [])]
     require(len(instances) == 9 and all(i.get("status") in (None, "ready") and not i.get("deposed")
             for i in instances), "Expected nine untainted current state instances")
-    proof = json.loads((PREVIOUS / "post-verification-private.json").read_text())
-    previous = json.loads((PREVIOUS / "summary.json").read_text())
+    old = (ORIGINAL / "post-state-final.tfstate").read_bytes()
+    old_raw = json.loads(old)
+    proof = json.loads((ORIGINAL / "post-verification-private.json").read_text())
+    previous = json.loads((ORIGINAL / "summary.json").read_text())
     require(previous.get("status") == "registry-only-apply-and-verification-passed"
             and previous.get("applyExitCode") == 0 and previous.get("managedResources") == 9
-            and previous.get("sourceRevision") == HEAD and previous.get("savedPlanSHA256") == REGISTRY_PLAN_SHA,
-            "Previous registry apply was not verified")
-    require(proof.get("stateSHA256") == digest(original) and proof.get("lineage") == raw.get("lineage")
-            and proof.get("serial") == raw.get("serial") and proof.get("managedResources") == 9,
-            "Registry checkpoint hash/lineage/serial mismatch")
+            and previous.get("sourceRevision") == HISTORICAL_HEAD and previous.get("savedPlanSHA256") == REGISTRY_PLAN_SHA,
+            "Historical registry apply was not verified")
+    require(proof.get("stateSHA256") == digest(old) and proof.get("lineage") == old_raw.get("lineage")
+            and proof.get("serial") == old_raw.get("serial") and proof.get("managedResources") == 9
+            and old == (REFRESH / "state-before-private-backup.json").read_bytes(), "Historical state checkpoint differs")
+    refreshed = json.loads((PREVIOUS / "summary.json").read_text())
+    review = json.loads((REFRESH / "review-summary.json").read_text())
+    expected_refresh = {"status": "exact-publication-metadata-state-refresh-passed", "applyExitCode": 0,
+        "configurationVerified": True, "managedResources": 9, "cloudResourcesMutated": False, "runtimeCreated": False,
+        "sourceRevision": HISTORICAL_HEAD, "changedFields": ["labels", "update_time"], "retryAttempted": False,
+        "oldUpdateTime": "2026-10-23T22:17:27.541917Z", "newUpdateTime": "2026-10-23T22:42:43.012721Z"}
+    require(all(type(refreshed.get(k)) is type(v) and refreshed[k] == v for k,v in expected_refresh.items()),
+            "Exact state-only refresh attestation missing or different")
+    refresh_sha = digest((REFRESH / "refresh-only.tfplan").read_bytes())
+    require(review.get("status") == "exact-publication-metadata-refresh-plan-passed"
+            and review.get("savedPlanSHA256") == refreshed.get("savedPlanSHA256") == refresh_sha
+            and review.get("stateSHA256") == refreshed.get("oldStateSHA256") == digest(old)
+            and refreshed.get("newStateSHA256") == digest(original)
+            and raw.get("lineage") == old_raw.get("lineage") == refreshed.get("lineage")
+            and raw.get("serial") == refreshed.get("newSerial") > refreshed.get("oldSerial") == old_raw.get("serial"),
+            "State A-to-B refresh hash/lineage/serial chain differs")
+    publication = BASE / "image-publication-20261024-3/summary.json"
+    publication_value = json.loads(publication.read_text())
+    require(json.loads((REFRESH / "preflight-private.json").read_text()).get("publicationEvidenceSHA256") == digest(publication.read_bytes())
+            and publication_value.get("status") == "private-inference-image-published-and-verified"
+            and publication_value.get("imageUri") == image and publication_value.get("remoteManifestAndConfigBytesMatch") is True,
+            "Actual verified image/publication continuity differs")
     version = json.loads(run([TF, "-chdir=" + str(ROOT), "version", "-json"]))
     require(version.get("terraform_version") == "1.17.0" and version.get("provider_selections")
             == {"registry.terraform.io/hashicorp/google": "7.46.1"}, "Unexpected Terraform/provider version")
@@ -130,6 +157,15 @@ def preflight(image):
     values = {r["address"]: r["values"] for r in resources}
     require(len(resources) == 9 and set(values) == GATE.IDENTITY.expected_addresses() | GATE.REGISTRY_ADDITIONS
             and GATE.identity_is_exact(values) and GATE.registry_is_exact(values), "Existing nine state resources differ")
+    before = json.loads(run([TF, "-chdir=" + str(ROOT), "show", "-json", ORIGINAL / "post-state-final.tfstate"]))
+    old_resources = GATE.managed(before["values"]["root_module"])
+    old_values = {r["address"]: r["values"] for r in old_resources}
+    repo = GATE.MODULE + GATE.REPOSITORY
+    require(len(old_resources) == 9 and old_values.get(repo, {}).get("labels") is None
+            and old_values[repo].get("update_time") == expected_refresh["oldUpdateTime"], "Original repository state differs")
+    expected_values = dict(old_values)
+    expected_values[repo] = {**old_values[repo], "labels": {}, "update_time": expected_refresh["newUpdateTime"]}
+    require(values == expected_values, "Refresh changed managed values outside exact two metadata fields")
     require(STATE.read_bytes() == original and source_is_frozen(), "State/source changed during preflight")
     return original, raw
 
@@ -212,7 +248,7 @@ def main():
         "stateFileUnchanged": STATE.read_bytes() == original, "sourceUnchanged": source_is_frozen(),
         "resourceDriftEntries": len(document.get("resource_drift", [])), "observedAtUtc": now(),
         "applyExecuted": False, "applyAuthorized": False, "apiEnabledByHelper": False,
-        "runtimeCreated": False, "imageProvenanceVerified": False}
+        "runtimeCreated": False, "imageProvenanceVerified": True, "registryMetadataRefreshVerified": True}
     passed = (report["status"] == "offline-increment-plan-passed" and summary["gateChecksPassed"] == 13
               and summary["gateChecksTotal"] == 13 and summary["creates"] == 4 and summary["noops"] == 9
               and not summary["otherChanges"] and len(headers) == 4 and set(headers) == GATE.RUNTIME_ADDITIONS
