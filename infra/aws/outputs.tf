@@ -1,4 +1,6 @@
 output "region" { value = var.region }
+output "account_id" { value = data.aws_caller_identity.current.account_id }
+output "execution_role_arn" { value = local.role_arn }
 output "media_bucket" { value = local.bucket_name }
 output "table_names" { value = { for k, t in aws_dynamodb_table.data : k => t.name } }
 output "queue_urls" { value = { for k, q in aws_sqs_queue.work : k => q.url } }

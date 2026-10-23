@@ -19,6 +19,24 @@ variable "execution_role_arn" {
   description = "Existing execution role. Learner Lab normally permits LabRole; record its broader permissions."
   default     = ""
 }
+variable "manage_execution_role" {
+  type        = bool
+  description = "Opt in to a dedicated project Lambda role. False preserves the existing-role/LabRole behavior."
+  default     = false
+  validation {
+    condition     = !var.manage_execution_role || var.execution_role_arn == ""
+    error_message = "Choose either manage_execution_role=true or an existing execution_role_arn, not both."
+  }
+}
+variable "allowed_account_ids" {
+  type        = list(string)
+  description = "AWS provider account allowlist. Empty preserves historical behavior; new environments must set an explicit account."
+  default     = []
+  validation {
+    condition     = alltrue([for account in var.allowed_account_ids : can(regex("^[0-9]{12}$", account))])
+    error_message = "Each allowed account ID must contain exactly 12 decimal digits."
+  }
+}
 variable "deploy_api" {
   type    = bool
   default = false

@@ -5,7 +5,7 @@ locals {
   } : {}
   has_worker       = var.deploy_api && var.worker_image != ""
   processing_ready = local.has_worker && var.inference_url != "" && var.google_invoker_email != ""
-  role_arn         = var.execution_role_arn != "" ? var.execution_role_arn : "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/LabRole"
+  role_arn         = var.manage_execution_role ? aws_iam_role.runtime[0].arn : (var.execution_role_arn != "" ? var.execution_role_arn : "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/LabRole")
   runtime_environment = {
     ECO_MODE                    = "aws"
     ECO_REGION                  = var.region
@@ -50,7 +50,8 @@ resource "aws_lambda_function" "zip" {
   memory_size                    = 512
   reserved_concurrent_executions = var.runtime_enabled ? -1 : 0
   environment { variables = local.runtime_environment }
-  depends_on = [aws_cloudwatch_log_group.functions]
+  # The role ARN alone does not wait for its SQS/table/storage permissions.
+  depends_on = [aws_cloudwatch_log_group.functions, aws_iam_role_policy.runtime]
 }
 resource "aws_lambda_function" "ingest" {
   count         = local.has_worker ? 1 : 0
@@ -65,7 +66,7 @@ resource "aws_lambda_function" "ingest" {
   reserved_concurrent_executions = var.runtime_enabled ? -1 : 0
   ephemeral_storage { size = 1024 }
   environment { variables = local.runtime_environment }
-  depends_on = [aws_cloudwatch_log_group.functions]
+  depends_on = [aws_cloudwatch_log_group.functions, aws_iam_role_policy.runtime]
 }
 resource "aws_apigatewayv2_api" "app" {
   count                        = var.deploy_api ? 1 : 0
