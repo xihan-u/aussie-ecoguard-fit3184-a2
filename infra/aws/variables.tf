@@ -10,6 +10,11 @@ variable "prefix" {
   type    = string
   default = "ecoguard3184"
 }
+variable "manage_media_bucket" {
+  type        = bool
+  description = "Opt in to a new Terraform-managed media bucket and BucketOwnerEnforced ownership. False preserves the course's externally bootstrapped bucket."
+  default     = false
+}
 variable "frontend_origins" {
   type    = list(string)
   default = ["http://localhost:5173", "http://127.0.0.1:5173"]

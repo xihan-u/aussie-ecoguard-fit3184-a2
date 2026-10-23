@@ -5,7 +5,11 @@ locals {
   } : {}
   has_worker       = var.deploy_api && var.worker_image != ""
   processing_ready = local.has_worker && var.inference_url != "" && var.google_invoker_email != ""
-  role_arn         = var.manage_execution_role ? aws_iam_role.runtime[0].arn : (var.execution_role_arn != "" ? var.execution_role_arn : "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/LabRole")
+  # The managed role has path "/". Keep its exact target visible before create,
+  # while the name reference preserves the dependency on the intended role.
+  role_arn = var.manage_execution_role ? "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${aws_iam_role.runtime[0].name}" : (
+    var.execution_role_arn != "" ? var.execution_role_arn : "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/LabRole"
+  )
   runtime_environment = {
     ECO_MODE                    = "aws"
     ECO_REGION                  = var.region

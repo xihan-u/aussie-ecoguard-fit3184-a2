@@ -28,6 +28,7 @@ module "ecoguard" {
   region                = "us-east-1"
   prefix                = "ecoguard3184"
   environment           = "personal"
+  manage_media_bucket   = true
   manage_execution_role = true
   execution_role_arn    = ""
   deploy_api            = true

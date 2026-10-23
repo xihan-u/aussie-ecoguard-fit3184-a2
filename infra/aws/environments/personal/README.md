@@ -10,7 +10,7 @@ personal spend must still hold when a deployment is authorized.
 The historical course root and its `deployment.auto.tfvars` remain intact.
 Terraform does not load a child module's auto tfvars. This root explicitly sets
 the account allowlist, region, dedicated role and all paused runtime inputs; it
-does not expose a runtime-enable switch. Oracle URL, worker image and Lex IDs
+does not expose a runtime-enable switch. Protected inference URL, worker image and Lex IDs
 remain empty. The default API endpoint, every Lambda, queue consumer, maintenance
 schedule, public registration and S3 data access are paused in the proposed stack.
 
@@ -26,8 +26,10 @@ schedule, public registration and S3 data access are paused in the proposed stac
   `TF_DATA_DIR` alone only separates plugin data and does not separate state.
   If this personal state already contains resources, stop using the first-plan
   checker and review the existing state's ownership and current deployment.
-- Locally select the verified `ecoguard-personal` AWS profile; in the already
-  verified CloudShell use its existing identity without that local profile.
+- For a local CLI, first configure and independently verify the intended
+  `ecoguard-personal` AWS profile; this task has not installed local AWS keys or
+  a local profile. In the verified CloudShell, use its existing identity without
+  that local profile.
   Immediately before planning, check STS returns **011154879765**. The provider's
   `allowed_account_ids` also rejects other accounts. Browser login alone does not
   authenticate a local CLI.
@@ -36,26 +38,77 @@ schedule, public registration and S3 data access are paused in the proposed stac
   locked Linux dependencies. Missing/relative paths are rejected. No sample or
   empty ZIP is provided. The first-plan checker also checks the local archive,
   its basic contents, integrity, size and SHA-256 against every planned function.
+  It also rejects historical WIF identities and arbitrary credential sources.
   This does not prove model behavior or dependency/runtime compatibility.
 - Review the packaged `config/google-wif.json` before any future activation:
   the repository's historical JSON targets another Google project/account.
-  This paused AWS preparation does not authorize changing GCP trust. Complete
-  the separately approved personal-account WIF and Oracle wiring, regenerate the
-  public JSON, then rebuild the ZIP before runtime can be enabled.
+  This paused AWS preparation does not authorize changing GCP trust. The new
+  public external-account JSON can describe the intended personal provider
+  before it exists; that is configuration preparation, not working federation.
+  Complete the personal-account WIF and protected inference wiring before any
+  future runtime activation.
 
-The shared module intentionally does not create the S3 bucket because of the
-historical course SCP workaround. The planned bucket settings target only
-`ecoguard3184-personal-011154879765-media`. A separately authorized deployment
-must create/verify ownership and region of that exact new bucket before applying
-its settings. No bucket bootstrap or creation is performed here. Likewise,
-`terraform plan` does not prove permission to create roles or to pass them.
+The personal root opts into creation of
+`ecoguard3184-personal-011154879765-media`, with `force_destroy=false`, explicit
+`BucketOwnerEnforced` ownership and the existing private/encrypted/TLS/CORS
+settings. No separate bucket bootstrap is required. The shared module keeps
+bucket creation disabled by default to preserve the historical course SCP
+workaround. A plan does not prove permission to create the bucket, create roles
+or pass them; a conflicting existing bucket or access denial needs review.
+
+## Portable local ZIP preparation
+
+`scripts/build_lambda_zip.py` uses a fresh temporary stage and a caller-reviewed
+**existing local image ID**, never a tag or a registry pull. It installs only
+`services/aws/requirements.lock.txt`, with hashes, binary wheels and explicit
+CPython 3.12 / manylinux x86_64 targets. The Lambda ZIP uses AWS's managed Python
+bootstrap; the separate container RIC lock and ffmpeg binaries are not copied.
+The app/domain modules and frozen calibration are copied without bytecode.
+The old Windows recipe and historical `config/google-wif.json` remain intact;
+this helper requires an explicit reviewed WIF path and never uses that default.
+
+Prepare the public JSON outside Git with the standard AWS external-account
+format, audience
+`//iam.googleapis.com/projects/995070689587/locations/global/workloadIdentityPools/ecoguard-aws/providers/aws-role`,
+the fixed AWS metadata source from `scripts/lambda_wif.py`, and the Google STS
+token URL. If an impersonation URL is present it must name
+`ecoguard-aws-invoker@ecoguard-fit3184-a2-2026.iam.gserviceaccount.com`.
+Other credential types, source files/executables, arbitrary URLs, extra fields
+and duplicate JSON keys are rejected. This public document contains no keys or
+tokens. The intended trusted AWS role is
+`arn:aws:iam::011154879765:role/ecoguard3184-personal-lambda`; preparing this
+document does not create that role or any GCP trust.
+
+From the repository root, use the full `sha256:...` image ID independently
+reviewed from the already-built Linux amd64 ingest image:
+
+```sh
+python3 scripts/build_lambda_zip.py \
+  --image-id "$ECOGUARD_REVIEWED_IMAGE_ID" \
+  --wif-config /absolute/path/to/reviewed-personal-wif.json \
+  --output build/aws-personal-lambda.zip --dry-run
+```
+
+The default is print-only with no Docker calls, downloads or writes. After
+review, replace `--dry-run` with `--build`. Existing output files are refused;
+choose a new versioned filename for another build. Bind paths containing commas
+or control characters and source symlinks are rejected. Only the dependency
+lock and fresh package stage are mounted into Docker, without host credentials
+or the whole checkout. The install downloads wheels; a second container then
+uses `--network none`, a read-only stage and `python -S` to test imports/native
+libraries without falling back to image site-packages. No handlers run. The
+deterministic archive creator enforces the Lambda unpacked size, and this helper
+enforces the personal gate's 50 MiB direct-upload limit before publishing output.
+The owned temporary stage is cleaned even on failure. These are local checks,
+not evidence of AWS execution, federation, models or cloud acceptance.
 
 ## Plan procedure after prerequisites are satisfied
 
 These are review steps for a future authorized session, not evidence that a plan
 has been run. Terraform 1.10+ and the locked AWS provider are required. Run from the
 repository root. On a local computer, prefix Terraform/STS commands with
-`AWS_PROFILE=ecoguard-personal`; omit that prefix in the verified CloudShell.
+`AWS_PROFILE=ecoguard-personal` only after configuring/verifying that profile;
+omit that prefix in the verified CloudShell.
 Do not put access keys into Terraform inputs or files in this directory.
 
 ```sh
@@ -85,12 +138,22 @@ metadata. Exit 0 means the offline first-plan and local archive checks passed;
 an apply or proves cloud permissions, credit coverage or acceptance.
 
 For a clean first deployment with the current fixed inputs, the expected plan is
-**53 creates, 0 updates, 0 deletes, 0 replacements**. The bucket itself is outside
-that count. The checker rejects imports, prior managed state, unexpected resource
-addresses, account/region drift, runtime activation, broad IAM grants and an
+**55 creates, 0 updates, 0 deletes, 0 replacements**, including the new bucket
+and its ownership control. The checker rejects imports, prior managed state,
+unexpected resource addresses, account/region drift, runtime activation, broad IAM grants and an
 unavailable/changed archive. Do not loosen the checker to accept an unexpected
-plan. A later worker/Oracle/Lex deployment needs a new reviewed plan and a gate
+plan. A later worker/inference/Lex deployment needs a new reviewed plan and a gate
 that matches that separately authorized scope; this gate intentionally blocks it.
+
+All seven ZIP functions must name the known exact execution role
+`arn:aws:iam::011154879765:role/ecoguard3184-personal-lambda`; a missing/unknown
+ARN or a different role is rejected even when the intended role also appears in
+the plan. That role must use path `/`. The bucket checks require all four public
+access blocks, default AES256 encryption, unconditional paused data-access denial
+and the full bucket/object TLS denial. S3 and HTTP API CORS must keep the two
+explicit local frontend origins and their reviewed method sets; wildcard or
+additional origins/methods fail. These checks inspect planned configuration;
+they do not claim live IAM, HTTPS or browser verification.
 
 There is no `apply` command in this preparation. Deployment authorization and a
 review of the concrete saved plan remain prerequisites. A fresh plan must replace
@@ -129,17 +192,27 @@ authorization still enforce media visibility.
 
 ## What this preparation has and has not verified
 
-The current account check found no matching EcoGuard roles/buckets or matching
-Lambda/ECR/Cognito/API resources in us-east-1 and ap-southeast-2. That is an
-inventory of those names/services/regions, not an account-wide emptiness claim.
-On 2026-10-23, the eight focused standard-library checks and independent static
-review passed. `terraform validate` also passed on macOS arm64 using Terraform
+On 2026-10-23, CloudShell reverified account 011154879765 in us-east-1. Its fresh
+name/prefix inventory found no matching EcoGuard IAM roles or global S3 buckets,
+or matching us-east-1 Lambda, ECR, DynamoDB, SQS, SNS, EventBridge, API Gateway,
+Cognito or CloudWatch Logs resources, without API errors. An earlier narrower
+Lambda/ECR/Cognito/API check also covered ap-southeast-2. These checks describe
+those names/services/regions, not an account-wide emptiness claim.
+The fifteen focused first-plan tests and nine packaging-helper tests passed
+locally without cloud access or dependency downloads. `terraform validate`
+also passed for the new bucket/ownership configuration on macOS arm64 using Terraform
 1.17.0 and the officially signed AWS provider 6.67.0. The personal provider lock
 includes that platform's additional checksum; the course lock is unchanged.
-The full AWS test suite was not completed in this local Python environment:
-one existing shutdown check requires the unavailable `botocore` package.
-A real saved plan, role creation, bucket bootstrap, deploy/apply, runtime tests,
-Oracle and WIF all remain unperformed.
+The earlier 18-test AWS infrastructure suite passed in the reviewed local ingest
+image with networking disabled; the expanded suite has not yet been rerun there.
+Host Python still lacks `botocore` for one existing shutdown check.
+The real new ZIP build passed: 3,998 files, 72,766,834 bytes unpacked and
+33,286,409 bytes compressed, SHA-256
+`fafb94bf948312f1fef8998b5619567ad3c3471381a34e9e816cec87b034d9f6`.
+The helper's staged package imports and native-library operations passed in a
+network-disabled `python -S` container, using the actual staged dependencies.
+A real saved plan, role/bucket creation, deploy/apply, runtime tests,
+protected inference and WIF all remain unperformed.
 
 Run the focused offline checker regression without cloud access or extra packages:
 

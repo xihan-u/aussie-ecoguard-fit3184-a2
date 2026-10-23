@@ -86,6 +86,7 @@ locals {
 resource "aws_iam_role" "runtime" {
   count       = var.manage_execution_role ? 1 : 0
   name        = "${local.name}-lambda"
+  path        = "/"
   description = "Aussie EcoGuard project Lambda runtime"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"

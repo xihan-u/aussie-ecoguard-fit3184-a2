@@ -2,15 +2,21 @@
 import argparse
 import base64
 import hashlib
+import importlib.util
 import json
 from pathlib import Path, PurePosixPath
 import sys
 import zipfile
 
+WIF_SPEC = importlib.util.spec_from_file_location("lambda_wif", Path(__file__).resolve().parents[4] / "scripts/lambda_wif.py")
+WIF = importlib.util.module_from_spec(WIF_SPEC)
+WIF_SPEC.loader.exec_module(WIF)
+
 ACCOUNT = "011154879765"
 REGION = "us-east-1"
 PREFIX = "ecoguard3184-personal"
 BUCKET = f"{PREFIX}-{ACCOUNT}-media"
+EXECUTION_ROLE = f"arn:aws:iam::{ACCOUNT}:role/{PREFIX}-lambda"
 FUNCTIONS = {"api", "infer", "delete", "notify", "outbox", "cleanup", "lex_fulfillment"}
 TABLES = {"media", "operations", "search", "subscriptions", "outbox"}
 QUEUES = {"ingest", "infer", "delete", "notify"}
@@ -19,6 +25,7 @@ ROOT_INPUTS = {
     "allowed_account_ids": [ACCOUNT], "region": REGION,
     "prefix": "ecoguard3184", "environment": "personal",
     "manage_execution_role": True, "execution_role_arn": "",
+    "manage_media_bucket": True,
     "deploy_api": True, "runtime_enabled": False,
     "worker_image": "", "inference_url": "", "google_invoker_email": "",
     "lex_bot_id": "", "lex_alias_id": "",
@@ -30,6 +37,7 @@ ROOT_INPUTS = {
 
 def expected_addresses():
     addresses = {
+        "aws_s3_bucket.media[0]", "aws_s3_bucket_ownership_controls.media[0]",
         "aws_s3_bucket_public_access_block.media", "aws_s3_bucket_server_side_encryption_configuration.media",
         "aws_s3_bucket_cors_configuration.media", "aws_s3_bucket_policy.media_tls",
         "aws_sqs_queue_policy.s3_ingest", "aws_cognito_user_pool.users",
@@ -90,6 +98,54 @@ def policy_is_scoped(policy):
     return True
 
 
+def exact_strings(actual, expected):
+    return (isinstance(actual, list) and all(isinstance(item, str) for item in actual)
+            and len(actual) == len(expected) and set(actual) == set(expected))
+
+
+def cors_is_scoped(blocks, origin_key, method_key, methods):
+    return (isinstance(blocks, list) and len(blocks) == 1 and isinstance(blocks[0], dict)
+            and exact_strings(blocks[0].get(origin_key), ROOT_INPUTS["frontend_origins"])
+            and exact_strings(blocks[0].get(method_key), methods))
+
+
+def inspect_bucket_security(values, check):
+    bucket = values("aws_s3_bucket.media[0]")
+    check("owned_personal_bucket_retained", bucket.get("bucket") == BUCKET and bucket.get("force_destroy") is False)
+    ownership = values("aws_s3_bucket_ownership_controls.media[0]")
+    check("personal_bucket_owner_enforced", ownership.get("bucket") == BUCKET
+          and ownership.get("rule") == [{"object_ownership": "BucketOwnerEnforced"}])
+    bucket_settings = ("aws_s3_bucket_public_access_block.media", "aws_s3_bucket_server_side_encryption_configuration.media",
+                       "aws_s3_bucket_cors_configuration.media", "aws_s3_bucket_policy.media_tls")
+    # Addresses alone do not prove that every setting targets this new bucket.
+    check("only_personal_bucket_settings", all(values(address).get("bucket") == BUCKET for address in bucket_settings))
+    public = values("aws_s3_bucket_public_access_block.media")
+    check("all_bucket_public_access_blocked", all(public.get(key) is True for key in
+          ("block_public_acls", "block_public_policy", "ignore_public_acls", "restrict_public_buckets")))
+    encryption = values("aws_s3_bucket_server_side_encryption_configuration.media").get("rule", [])
+    defaults = encryption[0].get("apply_server_side_encryption_by_default", []) if len(encryption) == 1 else []
+    check("bucket_default_aes256", len(defaults) == 1 and defaults[0].get("sse_algorithm") == "AES256")
+    check("bucket_cors_scoped", cors_is_scoped(values("aws_s3_bucket_cors_configuration.media").get("cors_rule"),
+          "allowed_origins", "allowed_methods", ["PUT", "GET", "HEAD"]))
+
+    policy = json.loads(values("aws_s3_bucket_policy.media_tls").get("policy", "{}"))
+    statements = policy.get("Statement", [])
+    check("only_reviewed_bucket_policy_statements", policy.get("Version") == "2012-10-17"
+          and len(statements) == 2 and {s.get("Sid") for s in statements}
+          == {"DenyInsecureTransport", "DenyDataAccessWhileRuntimePaused"})
+    targets = {f"arn:aws:s3:::{BUCKET}", f"arn:aws:s3:::{BUCKET}/*"}
+    tls = [s for s in statements if s.get("Sid") == "DenyInsecureTransport"]
+    check("bucket_requires_tls", len(tls) == 1 and tls[0].get("Effect") == "Deny" and tls[0].get("Principal") == "*"
+          and tls[0].get("Action") in ("s3:*", ["s3:*"]) and set(tls[0].get("Resource", [])) == targets
+          and tls[0].get("Condition") == {"Bool": {"aws:SecureTransport": "false"}})
+    pause = [s for s in statements if s.get("Sid") == "DenyDataAccessWhileRuntimePaused"]
+    required_s3_actions = {"s3:GetObject*", "s3:PutObject*", "s3:DeleteObject*", "s3:RestoreObject", "s3:AbortMultipartUpload",
+                           "s3:ListMultipartUploadParts", "s3:ListBucket", "s3:ListBucketVersions", "s3:ListBucketMultipartUploads"}
+    check("bucket_data_paused", len(pause) == 1 and pause[0].get("Effect") == "Deny" and pause[0].get("Principal") == "*"
+          and not pause[0].get("Condition") and set(pause[0].get("Action", [])) == required_s3_actions
+          and set(pause[0].get("Resource", [])) == targets)
+
+
 def inspect_plan(document):
     if not isinstance(document, dict):
         raise ValueError("Plan JSON must be an object")
@@ -113,7 +169,7 @@ def inspect_plan(document):
     check("fixed_personal_module_inputs", call.get("source") == "../.." and all(
         expressions.get(key, {}).get("constant_value") == value for key, value in ROOT_INPUTS.items()))
     check("unconditional_module_call", not any(key in call for key in ("count_expression", "for_each_expression", "depends_on")))
-    check("only_expected_53_resources", set(managed) == expected_addresses())
+    check("only_expected_55_resources", set(managed) == expected_addresses())
     changes = [r for r in document.get("resource_changes", []) if r.get("mode") == "managed"]
     check("first_plan_only_creates_expected_resources", len(changes) == len(expected_addresses())
           and {r.get("address") for r in changes} == expected_addresses()
@@ -133,33 +189,24 @@ def inspect_plan(document):
     check("all_functions_paused", all(f.get("reserved_concurrent_executions") == 0 for f in functions))
     check("only_x86_python_functions", all(f.get("runtime") == "python3.12" and f.get("architectures") == ["x86_64"]
           and f.get("function_name") == f"{PREFIX}-{name}" for name, f in zip(sorted(FUNCTIONS), functions)))
+    check("all_functions_use_dedicated_execution_role", all(f.get("role") == EXECUTION_ROLE for f in functions))
     check("queue_pollers_paused", all(values(f'aws_lambda_event_source_mapping.zip_queues["{name}"]').get("enabled") is False
                                      for name in ("infer", "delete", "notify")))
     check("maintenance_paused", all(values(f'aws_cloudwatch_event_rule.maintenance["{name}"]').get("state") == "DISABLED"
                                    for name in ("outbox", "cleanup")))
     check("http_api_paused", values("aws_apigatewayv2_api.app[0]").get("disable_execute_api_endpoint") is True)
+    check("http_api_cors_scoped", cors_is_scoped(values("aws_apigatewayv2_api.app[0]").get("cors_configuration"),
+          "allow_origins", "allow_methods", ["GET", "POST", "PATCH", "DELETE", "OPTIONS"]))
     pool = values("aws_cognito_user_pool.users")
     signup = pool.get("admin_create_user_config", [])
     check("public_signup_paused", len(signup) == 1 and signup[0].get("allow_admin_create_user_only") is True)
     check("on_demand_project_tables", all(values(f'aws_dynamodb_table.data["{name}"]').get("billing_mode") == "PAY_PER_REQUEST"
                                          and values(f'aws_dynamodb_table.data["{name}"]').get("name") == f"{PREFIX}-{name}" for name in TABLES))
-    bucket_settings = ("aws_s3_bucket_public_access_block.media", "aws_s3_bucket_server_side_encryption_configuration.media",
-                       "aws_s3_bucket_cors_configuration.media", "aws_s3_bucket_policy.media_tls")
-    # These create actions configure an external bucket; addresses alone do not
-    # prove that they target the new personal bucket rather than a retained one.
-    check("only_personal_bucket_settings", all(values(address).get("bucket") == BUCKET for address in bucket_settings))
-
-    bucket_policy = json.loads(values("aws_s3_bucket_policy.media_tls").get("policy", "{}"))
-    pause = [s for s in bucket_policy.get("Statement", []) if s.get("Sid") == "DenyDataAccessWhileRuntimePaused"]
-    required_s3_actions = {"s3:GetObject*", "s3:PutObject*", "s3:DeleteObject*", "s3:RestoreObject", "s3:AbortMultipartUpload",
-                           "s3:ListMultipartUploadParts", "s3:ListBucket", "s3:ListBucketVersions", "s3:ListBucketMultipartUploads"}
-    check("bucket_data_paused", len(pause) == 1 and pause[0].get("Effect") == "Deny" and pause[0].get("Principal") == "*"
-          and not pause[0].get("Condition") and set(pause[0].get("Action", [])) == required_s3_actions
-          and set(pause[0].get("Resource", [])) == {f"arn:aws:s3:::{BUCKET}", f"arn:aws:s3:::{BUCKET}/*"})
+    inspect_bucket_security(values, check)
     role = values("aws_iam_role.runtime[0]")
     expected_trust = {"Version": "2012-10-17", "Statement": [{"Effect": "Allow", "Action": "sts:AssumeRole",
                                                              "Principal": {"Service": "lambda.amazonaws.com"}}]}
-    check("dedicated_lambda_role_only", role.get("name") == f"{PREFIX}-lambda"
+    check("dedicated_lambda_role_only", role.get("name") == f"{PREFIX}-lambda" and role.get("path") == "/"
           and json.loads(role.get("assume_role_policy", "{}")) == expected_trust
           and not role.get("managed_policy_arns") and not role.get("inline_policy"))
     policy = values("aws_iam_role_policy.runtime[0]")
@@ -186,13 +233,19 @@ def verify_archive(document):
     with zipfile.ZipFile(path) as archive:
         entries = archive.infolist()
         if sum(e.file_size for e in entries) > 250 * 1024 * 1024 or any(
-                e.flag_bits & 1 or PurePosixPath(e.filename).is_absolute() or ".." in PurePosixPath(e.filename).parts for e in entries):
+                e.flag_bits & 1 or PurePosixPath(e.filename).is_absolute() or ".." in PurePosixPath(e.filename).parts
+                or "\\" in e.filename or ((e.external_attr >> 16) & 0o170000) == 0o120000 for e in entries):
             raise ValueError("ZIP exceeds unpacked size or contains unsafe/encrypted entries")
+        if len(archive.namelist()) != len(set(archive.namelist())):
+            raise ValueError("ZIP contains duplicate paths")
         required = {"ecoguard_aws/handlers.py", "ecoguard_aws/runtime.py", "ecoguard_aws/config.py",
                     "ecoguard_aws/pet-calibration.json", "ecoguard_domain/__init__.py", "boto3/__init__.py",
                     "google/auth/__init__.py", "requests/__init__.py", "config/google-wif.json"}
         if not required <= set(archive.namelist()) or archive.testzip() is not None:
             raise ValueError("ZIP is corrupt or missing application/dependency files; no placeholder package is accepted")
+        if archive.getinfo("config/google-wif.json").file_size > WIF.MAX_DOCUMENT_BYTES:
+            raise ValueError("Packaged WIF document is too large")
+        WIF.parse_personal_wif(archive.read("config/google-wif.json"))
 
 
 def main(argv=None):
