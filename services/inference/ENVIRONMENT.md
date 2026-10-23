@@ -3,11 +3,38 @@
 The same service supports private Cloud Run IAM or an Oracle-hosted deployment.
 Choose the explicit production authentication mode for the actual host.
 
-Run Python 3.12. The Docker build context is the repository root:
+Run Python 3.12. The Docker build context is the repository root. The standard-library
+helper prints a `linux/amd64` command, including on Apple Silicon Macs:
 
-```powershell
-docker build -f services/inference/Dockerfile -t ecoguard-inference .
+```sh
+python3 scripts/build_containers.py inference --image ecoguard-inference:20261023-1 --dry-run
 ```
+
+Use `python` instead of `python3` on Windows. The helper prints PowerShell syntax on
+Windows and POSIX shell syntax on macOS/Linux; it resolves the build context from
+the script location, so it also works outside the repository root. Omit `--dry-run`
+for the same print-only behavior. An explicit non-`latest` image tag is required.
+Only add `--build` after reviewing the command and selecting the intended Docker
+engine/builder. This checks for a running Linux engine and Buildx, then builds and
+loads the image without pushing it or starting a container. Building may download
+base images and dependencies; Apple Silicon needs working amd64 emulation in Docker.
+For a release, add `--base-image` with a reviewed official Python 3.12 slim digest.
+Replace the digest placeholder before running this print-only example:
+
+```sh
+python3 scripts/build_containers.py inference --image ecoguard-inference:20261023-1 --base-image 'python:3.12-slim@sha256:REPLACE_WITH_VERIFIED_64_HEX_DIGEST' --dry-run
+```
+
+The helper passes `BASE_IMAGE` to the Dockerfile and accepts only
+`python:3.12-slim@sha256:<64 hex characters>` or
+`python:3.12-slim-bookworm@sha256:<64 hex characters>`. Tags alone are rejected
+when this option is supplied. Omitting it retains the Dockerfile's development
+default; the helper does not resolve or verify a digest or the final image/model
+runtime. Follow the existing deployment and model acceptance gates.
+
+The same helper's AWS ingest target separately requires the explicit committed
+RIC version `--aws-lambda-ric-version 4.2.2`; its hash lock and installation gates
+are documented in [AWS container build preparation](../aws/ENVIRONMENT.md#container-build-preparation).
 
 Deploy Cloud Run with 4 vCPU, 8 GiB, request concurrency 1, minimum instances 0,
 maximum instances 1 and a 360-second request timeout. These are unbenchmarked
