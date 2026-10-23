@@ -1,15 +1,20 @@
 # Personal GCP deployment stages
 
 This root manages **ecoguard-fit3184-a2-2026**, project number
-**995070689587**, in `us-central1`. Seven identity resources have actually been
-applied from `fdfaf23`; their exact provider, single service-account grant and
-zero user-managed keys were verified. See the [actual deployment report](../../../../docs/c-personal-foundation-deployed-20261024.md).
+**995070689587**, in `us-central1`. It now has **nine managed resources**: the
+seven deployed identity resources plus the approved Artifact Registry API and
+private `us-central1/ecoguard` repository. The registry apply exited zero and its
+live verification passed; see the [registry deployment report](../../../../docs/c-registry-deployed-20261024.md).
+The original identity provider, single service-account grant and zero
+user-managed keys remain verified in the [foundation report](../../../../docs/c-personal-foundation-deployed-20261024.md).
 The AWS application remains paused. Token exchange and cloud inference remain
 unverified.
 
-The current source prepares two later increments. The real registry saved plan
-passed **12/12 checks**, with two creates and seven no-ops; it has not been applied.
-Private inference has not yet been planned. See the [saved-plan review](../../../../docs/c-registry-saved-plan-review-20261024.md).
+The registry saved plan passed **12/12 checks**, with two creates and seven no-ops,
+and was subsequently applied under its matching approval. The repository was
+empty at the post-apply check; this record does not claim image publication.
+Private inference has not yet been planned. See the earlier [saved-plan review](../../../../docs/c-registry-saved-plan-review-20261024.md)
+for its pre-apply snapshot and the deployment report for the actual result.
 The default stage is `identity`; committing this source does not activate compute. The child module's historical
 `deployment.auto.tfvars` is not loaded by this separate root.
 
@@ -17,8 +22,9 @@ The default stage is `identity`; committing this source does not activate comput
 
 The authoritative personal backend is the existing GCP CloudShell workspace
 `~/ecoguard-c-personal-20261023/source/infra/gcp/environments/personal/state/terraform.tfstate`.
-Its controlled checkout moved to `00d58e0` for the reviewed registry plan; the
-last applied identity source remains `fdfaf23`. Preserve the private post-apply backup and use one operator. Git does not
+Its controlled checkout remains at `00d58e0` for the applied registry increment;
+the original identity source was `fdfaf23`. Preserve the private nine-resource
+post-apply backup and use one operator. Git does not
 share state. Do not create a second owner, copy/import the historical team's
 state, or initialize this local clone and apply against an empty state.
 
@@ -31,8 +37,8 @@ not an upgrade. Keep full plans, JSON, logs and backups in ignored `private/`.
 
 | Stage | Expected transition | New managed resources |
 | --- | --- | --- |
-| `identity` (default) | Existing seven remain | None |
-| `registry` | Seven no-ops, two creates; nine total | Artifact Registry API and private Docker repository |
+| `identity` (default) | Historical seven-resource baseline; returning from nine proposes removal | None |
+| `registry` | Applied: seven no-ops, two creates; current nine total | Artifact Registry API and private Docker repository |
 | `private-inference` | Nine no-ops, four creates; thirteen total | Run API, dedicated runtime account, service and one service-level invoker grant |
 
 The stages preserve existing addresses. The personal route omits the unused GCS
@@ -105,8 +111,11 @@ a Linux amd64 container using official archives matched to the reviewed hashes,
 with networking disabled: **zero errors and warnings**. The earlier macOS
 provider startup failed before schema checking; the Linux result resolves that
 local validation gap. All **38 GCP offline tests** passed, including 23 new
-increment regressions. These regression tests use synthetic plans. A separate real registry plan has
-now passed its 12 checks; no increment apply has occurred.
+increment regressions. These regression tests use synthetic plans. A separate
+real registry plan passed its 12 checks and the approved apply now completed,
+with nine-resource state and live configuration verification. The two-create
+registry gate is historical for that transition; the next private increment
+must use the existing nine-resource state.
 
 ```sh
 python3 -m unittest discover -s infra/gcp/tests -v
@@ -122,9 +131,10 @@ Existing Google credits expire **28 October**. The additional personal-spend
 budget remains **A$0**. Reverify eligible funding and define bounded tests plus
 cleanup no later than 27 October Melbourne, unless a separately verified funded
 period is available. Minimum zero does not remove image-storage charges. There
-is no automatic cleanup or guaranteed account-wide spend stop. A return to
-`registry` or `identity` is a destructive reverse increment that needs its own
-reviewed plan, retained artifacts and state backup; the forward gate rejects it.
+is no automatic cleanup or guaranteed account-wide spend stop. Stepping back to
+an earlier stage is a destructive reverse increment that needs its own reviewed
+plan, retained artifacts and state backup; the forward gate rejects it.
 
-Prepared with Codex assistance; no next-stage cloud resources were created by
-this source-preparation batch.
+Prepared with Codex assistance. Source preparation and the separately approved
+registry deployment are recorded independently; private inference remains a
+later reviewed increment.
