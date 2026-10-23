@@ -2,7 +2,9 @@
 
 --verify requires the completed matching deployment, its original NEW approval
 with approvedBoundedHttpTests=true, fresh existing credit evidence and frozen
-helpers. One anonymous health check, one user-authenticated health check and one
+helpers. The exact retained failed postchecks require a separate successful
+read-only audit; their original summaries are never rewritten. One anonymous
+health check, one user-authenticated health check and one
 authenticated warmup are allowed, without retries. No IAM/API/AWS changes, keys,
 impersonation, persistent tokens, deployments or inference-media requests occur.
 Startup readiness is distinct from the warmup's model downloads/loading.
@@ -35,6 +37,10 @@ FROZEN_APPLY = BASE / "frozen-apply-private-inference-20261024-1.py"
 FROZEN_APPLY_SHA = "b4b3a00db6c849e4b154c93975df86c88454c78d101207f03ce693f249130c99"
 FROZEN_PUBLISH = BASE / "frozen-publish-inference-20261024-1.py"
 FROZEN_PUBLISH_SHA = "f180a9ac01473e468bca17c6a4a1a8f5154422bfafb6b986f9a469b48444b462"
+READ_ONLY_AUDIT = APPLY / "read-only-verification-20261024-3"
+FROZEN_READ_ONLY = BASE / "frozen-verify-private-run-after-apply-20261024-3.py"
+FROZEN_READ_ONLY_SHA = "db43e6c1bd0e14246dd0fe0a11e6cda6a89157a66774fc26c809d6c8141fdddb"
+READ_ONLY_PLAN_SHA = "988d8f63902c705443d70d53b03ebc30440b281f8445d6f78b443e24f64ec518"
 HEAD = "3dd63c805b625fb3b378ac977d51c6959d599f0c"
 PROJECT, NUMBER, OPERATOR = "ecoguard-fit3184-a2-2026", "995070689587", "hoshigahoshii@163.com"
 IMAGE = ("us-central1-docker.pkg.dev/" + PROJECT + "/ecoguard/inference@"
@@ -80,20 +86,104 @@ def save(name, value):
         json.dump(value, output, indent=2); output.write("\n")
 
 
+def exact_fields(record, fields):
+    return all(type(record.get(key)) is type(value) and record[key] == value for key, value in fields.items())
+
+
+def deployment_evidence(a, m):
+    """Bind the exact retained apply/postcheck failures to successful audit3.
+
+    Only the pinned audit's local proof predicates are called here. Its main,
+    preflight, apply and verification entrypoints are never called.
+    """
+    original = m.local_json(APPLY / "summary.json")
+    failed = {"status": "blocked", "project": PROJECT, "projectNumber": NUMBER, "sourceRevision": HEAD,
+        "savedPlanSHA256": READ_ONLY_PLAN_SHA, "imageUri": IMAGE, "applyExecuted": True,
+        "applyExitCode": 0, "configurationVerified": False, "retryAttempted": False,
+        "authenticatedInvocationAttempted": False, "awsActivated": False,
+        "verificationErrorType": "RuntimeError",
+        "verificationError": "Exact thirteen state resources or unchanged prior nine differ"}
+    require(exact_fields(original, failed) and not original.get("processOutcomeUncertain")
+            and original.get("observedAtUtc") == "2026-10-23T23:07:53.566104+00:00",
+            "Original apply is not the exact preserved successful apply/failed postcheck")
+    for attempt, reason, stamp in (
+            (1, "Unexpected project IAM delta", "2026-10-23T23:12:48.957026+00:00"),
+            (2, "Unexpected/missing/disabled project service account", "2026-10-23T23:20:39.220938+00:00")):
+        previous = m.local_json(APPLY / f"read-only-verification-20261024-{attempt}" / "summary.json")
+        require(exact_fields(previous, {"status": "blocked", "project": PROJECT, "projectNumber": NUMBER,
+                    "sourceRevision": HEAD, "savedPlanSHA256": READ_ONLY_PLAN_SHA, "imageUri": IMAGE,
+                    "applyExecuted": False, "configurationVerified": False, "errorType": "RuntimeError",
+                    "error": reason, "observedAtUtc": stamp}), "A retained failed read-only audit differs")
+    audit = load_frozen("frozen_http_readonly_audit3", FROZEN_READ_ONLY, FROZEN_READ_ONLY_SHA)
+    require(audit.RESULT == READ_ONLY_AUDIT and audit.ORIGINAL == APPLY and audit.ROOT == ROOT
+            and audit.PROJECT == PROJECT and audit.NUMBER == NUMBER
+            and audit.DEFAULT == NUMBER + "-compute@developer.gserviceaccount.com", "Frozen read-only audit scope differs")
+    summary_path, detail_path = READ_ONLY_AUDIT / "summary.json", READ_ONLY_AUDIT / "post-verification-private.json"
+    summary, detail = m.local_json(summary_path), m.local_json(detail_path)
+    passed = {"status": "private-run-configuration-readonly-verification-passed", "project": PROJECT,
+        "projectNumber": NUMBER, "sourceRevision": HEAD, "savedPlanSHA256": READ_ONLY_PLAN_SHA,
+        "imageUri": IMAGE, "originalApplyExitCode": 0, "originalApplySummaryPreserved": True,
+        "applyExecuted": False, "stateModified": False, "iamModified": False, "apisModified": False,
+        "authenticatedInvocationAttempted": False, "awsActivated": False,
+        "normalization": "exact canonical IAM grant.name on deep copy only", "configurationVerified": True,
+        "managedResources": 13, "userManagedKeyCount": 0, "originalEvidenceUnchanged": True,
+        "cloudInferenceVerified": False, "crossCloudVerified": False}
+    require(exact_fields(summary, passed), "The exact new read-only configuration audit has not passed")
+    require(summary.get("stateSHA256") == detail.get("stateSHA256") == audit.STATE_SHA == sha(STATE)
+            and summary.get("readyRevision") == detail.get("run", {}).get("readyRevision"),
+            "Read-only state/revision attestation differs")
+    proof_fields = audit.http_local_proofs(m)
+    require(isinstance(proof_fields, dict) and set(proof_fields) == {"auditProof", "defaultComputeCreationProof"},
+            "Pinned read-only local proof interface differs")
+    for key, value in proof_fields.items():
+        require(json.dumps(summary.get(key), sort_keys=True) == json.dumps(value, sort_keys=True)
+                and json.dumps(detail.get(key), sort_keys=True) == json.dumps(value, sort_keys=True),
+                "Retained automatic-agent/default-account proof differs")
+    for key, filename in (("auditProof", "automatic-agent-audit-proof-private.json"),
+                          ("defaultComputeCreationProof", "default-compute-creation-proof-private.json")):
+        require(m.local_json(READ_ONLY_AUDIT / filename) == proof_fields[key], "Retained local proof capture differs")
+    variances = {
+        "autoGrantScopeVariance": {"previousExpectedProjectAdditions": 1, "observedProjectAdditions": 3,
+            "additionalGoogleManagedAgents": [edge["member"] for edge in proof_fields["auditProof"]["addedProjectEdges"]
+                                               if edge["role"] != "roles/run.serviceAgent"],
+            "newGrantPerformedByVerifier": False, "notIndividuallyListedInOriginalApproval": True},
+        "inventoryVariance": {"additionalAccount": audit.DEFAULT, "assignedRoleCount": 0, "ownIamBindingCount": 0,
+            "userManagedKeyCount": 0, "creationActorIdentified": False, "createdByVerifier": False}}
+    for key, value in variances.items():
+        require(json.dumps(summary.get(key), sort_keys=True) == json.dumps(value, sort_keys=True)
+                and json.dumps(detail.get(key), sort_keys=True) == json.dumps(value, sort_keys=True),
+                "Reported automatic-agent/default-account scope variance differs")
+    dependencies = set(audit.http_evidence_paths())
+    require(all(isinstance(path, Path) and path.is_absolute() and path.resolve().is_relative_to(BASE.resolve())
+                and not path.resolve().is_relative_to(READ_ONLY_AUDIT.resolve()) for path in dependencies),
+            "Read-only proof dependency escaped the fixed task scope")
+    originals = {path for path in APPLY.rglob("*") if path.is_file() and not path.is_relative_to(READ_ONLY_AUDIT)}
+    originals |= {STATE, a.BINARY, a.PUBLICATION, PLAN / "apply-approval.json", PLAN / "state-before-private-backup.json",
+                  PLAN / "apply-started.json", FROZEN_APPLY, FROZEN_PUBLISH} | dependencies
+    manifest_path = READ_ONLY_AUDIT / "original-evidence-sha256-private.json"
+    preserved = m.local_json(manifest_path)
+    require(isinstance(preserved, dict) and set(preserved) == {str(path) for path in originals},
+            "Original-evidence manifest is not the complete fixed path set")
+    require(all(path.is_file() and not path.is_symlink()
+                and isinstance(preserved[str(path)], str) and re.fullmatch(r"[0-9a-f]{64}", preserved[str(path)])
+                and sha(path) == preserved[str(path)] for path in originals), "Original evidence hash chain changed")
+    captured_state = READ_ONLY_AUDIT / "post-state-private-backup.tfstate"
+    require(captured_state.is_file() and not captured_state.is_symlink() and sha(captured_state) == sha(STATE),
+            "Read-only post-state capture differs")
+    audit_files = {path for path in READ_ONLY_AUDIT.rglob("*") if path.is_file()}
+    require(all(not path.is_symlink() for path in audit_files), "Read-only audit evidence is symlinked")
+    # This exact independently callable reader includes all three real accounts;
+    # do not sanitize the inventory or fall back to B4's superseded allowlist.
+    a.HTTP_IDENTITY_READER = lambda reader_m, after=True: audit.http_identity_and_keys(a, reader_m, after=after)
+    return summary, detail_path, originals | audit_files | {FROZEN_READ_ONLY}
+
+
 def local_inputs(a, m):
     require(a.HEAD == HEAD and a.PLAN == PLAN and a.RESULT == APPLY and a.STATE == STATE
             and a.PROJECT == PROJECT and a.NUMBER == NUMBER, "Frozen apply helper scope differs")
-    summary = m.local_json(APPLY / "summary.json")
-    fixed = {"status": "private-run-apply-and-configuration-verification-passed", "project": PROJECT,
-        "projectNumber": NUMBER, "sourceRevision": HEAD, "imageUri": IMAGE, "applyExecuted": True,
-        "applyExitCode": 0, "configurationVerified": True, "managedResources": 13,
-        "runtimeCreated": True, "userManagedKeyCount": 0, "retryAttempted": False,
-        "authenticatedInvocationAttempted": False, "awsActivated": False,
-        "cloudInferenceVerified": False, "crossCloudVerified": False}
-    require(all(type(summary.get(k)) is type(v) and summary[k] == v for k, v in fixed.items()),
-            "Actual private deployment has not passed exact configuration verification")
+    summary, detail_path, evidence_files = deployment_evidence(a, m)
     pre = m.local_json(APPLY / "preflight-private.json")
-    detail = m.local_json(APPLY / "post-verification-private.json")
+    detail = m.local_json(detail_path)
     publication_sha, plan_sha = pre.get("publicationEvidenceSHA256"), summary.get("savedPlanSHA256")
     require(all(isinstance(v, str) and re.fullmatch(r"[0-9a-f]{64}", v) for v in (publication_sha, plan_sha))
             and pre.get("sourceRevision") == HEAD and pre.get("imageUri") == IMAGE
@@ -125,8 +215,8 @@ def local_inputs(a, m):
                + ":" + manifest["preprocessingVersion"])
     record = a.approval_record(m, plan_sha, IMAGE, publication_sha)
     require(record.get("approvedBoundedHttpTests") is True, "Actual new approval excludes these bounded HTTP tests")
-    files = (APPLY / "summary.json", APPLY / "preflight-private.json", APPLY / "post-verification-private.json",
-             PLAN / "apply-approval.json", a.BINARY, a.PUBLICATION, STATE)
+    files = {APPLY / "summary.json", APPLY / "preflight-private.json", detail_path,
+             PLAN / "apply-approval.json", a.BINARY, a.PUBLICATION, STATE} | evidence_files
     require(all(p.is_file() and not p.is_symlink() for p in files), "Evidence is missing or symlinked")
     return detail, url, feature, plan_sha, publication_sha, {p: sha(p) for p in files}
 
@@ -144,7 +234,7 @@ def live_metadata(a, m, detail, url, directory):
             "Ready service URL/revision changed")
     policies = m.private_policies()
     require(policies == detail["iamAfter"], "Project/repository/ancestor IAM changed after deployment")
-    identity = a.identity_and_keys(m, after=True)
+    identity = getattr(a, "HTTP_IDENTITY_READER", a.identity_and_keys)(m, after=True)
     require(identity == detail["identityAfter"], "WIF/identities/keys changed after deployment")
     require(not a.edges(m.cloud("iam", "service-accounts", "get-iam-policy", a.RUNTIME,
             "--project=" + PROJECT)), "Runtime service-account grant changed")

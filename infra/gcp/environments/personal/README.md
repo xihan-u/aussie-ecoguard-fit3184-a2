@@ -1,168 +1,59 @@
-# Personal GCP deployment stages
+# Personal GCP deployment custody and stages
 
-This root manages **ecoguard-fit3184-a2-2026**, project number
-**995070689587**, in `us-central1`. It now has **nine managed resources**: the
-seven deployed identity resources plus the approved Artifact Registry API and
-private `us-central1/ecoguard` repository. The registry apply exited zero and its
-live verification passed; see the [registry deployment report](../../../../docs/c-registry-deployed-20261024.md).
-The original identity provider, single service-account grant and zero
-user-managed keys remain verified in the [foundation report](../../../../docs/c-personal-foundation-deployed-20261024.md).
-The AWS application remains paused. Token exchange and cloud inference remain
-unverified.
+The approved private inference service is deployed in **ecoguard-fit3184-a2-2026** / **995070689587**, `us-central1`. The exact saved plan applied once with exit 0. A separate complete read-only configuration audit passed at `2026-10-23T23:26:51.282549Z`. There are **13 managed resources**, state serial **17**: seven identity, two registry and four runtime resources.
 
-The registry saved plan passed **12/12 checks**, with two creates and seven no-ops,
-and was subsequently applied under its matching approval. The repository was
-empty at the post-apply check. The approved inference image has since been
-published and its actual manifest/config bytes verified; see the
-[image publication report](../../../../docs/c-private-image-published-20261024.md).
-The second real private-inference saved plan now passed **13/13 checks** with
-four creates, nine no-ops and no drift, warnings or unknown security fields;
-see the [private-service plan review](../../../../docs/c-private-inference-saved-plan-review-20261024.md).
-It has not been applied or authorized for execution. The earlier
-[saved-plan review](../../../../docs/c-registry-saved-plan-review-20261024.md)
-and deployment reports retain their respective historical observations.
-The default stage is `identity`; committing this source does not activate compute. The child module's historical
-`deployment.auto.tfvars` is not loaded by this separate root.
+See the [actual deployment report](../../../../docs/c-private-inference-deployed-20261024.md) and [selected evidence](../../../../evidence/c-private-inference-deployed-20261024.json). Deployment readiness is separate from HTTP/model testing and AWS-role federation. AWS remains paused; full media processing and assignment acceptance are unverified.
 
-## Existing state and source custody
+## Current release and authoritative state
 
-The authoritative personal backend is the existing GCP CloudShell workspace
-`~/ecoguard-c-personal-20261023/source/infra/gcp/environments/personal/state/terraform.tfstate`.
-After the exact state-only publication metadata refresh at `00d58e0`, the
-controlled checkout moved to `3dd63c8` for the second private-service plan.
-The current state still has nine resources, serial 12. The verified checkpoint
-retains private A/B backups; state, lock and `.gitignore` were unchanged across
-the source transition. Preserve that checkpoint and use one operator. Git does not
-share state. Do not create a second owner, copy/import the historical team's
-state, or initialize this local clone and apply against an empty state.
+The state-owning CloudShell checkout is fixed at `3dd63c805b625fb3b378ac977d51c6959d599f0c`. Its existing backend is:
 
-Before a future plan, verify the operator, exact project ID/number, default
-Terraform workspace, current source, state lineage/serial and backup. Update the
-state-owning checkout only as a controlled step; use the signed provider lock,
-not an upgrade. Keep full plans, JSON, logs and backups in ignored `private/`.
+`~/ecoguard-c-personal-20261023/source/infra/gcp/environments/personal/state/terraform.tfstate`
 
-## Bounded increments
+The post-apply state SHA-256 is `f3b6113be12f34b05701da2e095d0df5763a97d8efdcd6a38a7fdbfc0d1d8fad`. Original pre/post backups, lineage, plans, logs, full policies and the actual approval remain private. Git does not transfer state. Use one operator; do not initialize a second owner or import the historical team state.
 
-| Stage | Expected transition | New managed resources |
+Keep the Terraform 1.17.0 / Google 7.46.1 signed provider lock. Before any future plan, verify the live operator/project, source, default workspace, backend, state hash/lineage/serial and a retained backup. Current local source/evidence delivery may advance beyond the deployed release; that does not update CloudShell or deployed resources.
+
+**Always pass the intended stage and immutable image to a future plan.** The source default remains `identity`; Terraform does not remember previous CLI inputs. Omitting them from the current thirteen-resource state proposes destructive removals. Do not accept those as routine changes.
+
+## Historical bounded increments
+
+| Stage | Actual transition | Managed additions |
 | --- | --- | --- |
-| `identity` (default) | Historical seven-resource baseline; returning from nine proposes removal | None |
-| `registry` | Applied: seven no-ops, two creates; current nine total | Artifact Registry API and private Docker repository |
-| `private-inference` | Real plan passed: nine no-ops, four creates; thirteen proposed total, not applied | Run API, dedicated runtime account, service and one service-level invoker grant |
+| `identity` | Applied: 0 to 7 | Restricted AWS WIF and invoker identity |
+| `registry` | Applied: 7 to 9 | Registry API and private Docker repository |
+| `private-inference` | Applied: 9 to 13 | Run API, dedicated runtime account, private service and sole service-level invoker grant |
 
-The stages preserve existing addresses. The personal route omits the unused GCS
-model bucket, storage API and bucket-reader grant: the unchanged locked manifest
-uses pinned HTTPS artifacts with exact byte/hash verification. Historical shared
-module defaults retain their previous model storage and deletion protection.
+The seven-resource [foundation](../../../../docs/c-personal-foundation-deployed-20261024.md), [registry deployment](../../../../docs/c-registry-deployed-20261024.md), [image publication](../../../../docs/c-private-image-published-20261024.md), and [13/13 saved-plan review](../../../../docs/c-private-inference-saved-plan-review-20261024.md) retain their historical observations. The earlier first runtime plan was blocked at 11/13, never applied; explicit `http1` plus a separately reviewed state-only publication metadata refresh resolved that planning gap. Refresh changed only repository `labels` and `update_time` before the approved runtime plan, without changing cloud resources or IAM.
 
-The personal image is empty before `private-inference`. That stage requires
-`us-central1-docker.pkg.dev/ecoguard-fit3184-a2-2026/ecoguard/inference@sha256:<64 lowercase hex>`.
-Tags and other registries/paths are rejected. The separately approved publication
-verified this actual immutable image URI:
+The first-create `check_plan.py` and forward-increment `check_runtime_plan.py` are intentionally strict historical plan gates. The latter accepts exactly 7-to-9 or 9-to-13 forward transitions, not arbitrary updates from the current thirteen-resource state. Future wiring, reverse cleanup or provider/state remedies require a new bounded saved-plan review; do not weaken these gates to fit unrelated changes.
+
+## Current service boundary
+
+The actual Ready URL is `https://ecoguard-inference-adlnb7yumq-uc.a.run.app`, revision `ecoguard-inference-00001-bwg`. Its approved image is:
 
 `us-central1-docker.pkg.dev/ecoguard-fit3184-a2-2026/ecoguard/inference@sha256:7e481399309c8a90276c864e9765545657e44c00e9061ee668b4e56db4f22fdb`
 
-The raw remote manifest/config matched the reviewed archive. The subsequent
-private-service plan verified that provenance through its exact metadata refresh
-checkpoint. State remains at nine resources; runtime approval and cloud inference
-remain outstanding.
+The sole service-level invoker is `ecoguard-aws-invoker@ecoguard-fit3184-a2-2026.iam.gserviceaccount.com`. Existing WIF still accepts only normalized AWS assumed role `arn:aws:sts::011154879765:assumed-role/ecoguard3184-personal-lambda`. CloudShell/root is a different identity; do not broaden WIF for testing.
 
-The root fixes the actual AWS account/role/region, Cognito issuer/client, media
-bucket and manifest hash. It permits no arbitrary environment override. Existing
-WIF access remains limited to normalized assumed role
-`arn:aws:sts::011154879765:assumed-role/ecoguard3184-personal-lambda` and existing
-`ecoguard-aws-invoker@ecoguard-fit3184-a2-2026.iam.gserviceaccount.com`.
-CloudShell/root is not this runtime role; do not broaden trust to simplify tests.
+Run uses `ecoguard-inference@ecoguard-fit3184-a2-2026.iam.gserviceaccount.com`, with no new assigned project/repository/ancestor role or own IAM bindings. The verified configuration requires IAM invocation, HTTP/1 port 8080, fixed model/Cognito/media environment, four CPUs with startup boost, 8 GiB, concurrency one, automatic minimum zero/maximum one at service and revision, platform timeout 360s and application deadline 240s. No extra commands, volumes, public invoker or custom audience is permitted. The unused GCS model bucket remains omitted; the locked manifest downloads pinned HTTPS artifacts with exact hashes/sizes.
 
-The proposed service explicitly checks invoker IAM and HTTP/1 on port 8080.
-Its sole new grant is
-`roles/run.invoker` on `ecoguard-inference` to that existing invoker account.
-Invoker access adds no public or project-wide invoker role. The dedicated runtime account receives
-no new IAM role. The service uses four CPUs, 8 GiB, request concurrency one,
-minimum zero, automatic service/revision maximum one, request timeout 360s and application deadline
-240s. These are reviewed limits, not proven cloud performance or a hard cost cap.
+Postchecks retained three observed differences rather than changing the deployment: canonical service IAM name serialization, two extra Google-managed service-agent project roles, and an unprivileged default Compute account. The [deployment report](../../../../docs/c-private-inference-deployed-20261024.md) describes their exact audit evidence and the original approval scope variance. No postcheck performed a grant or state update. All three project-listed accounts have zero user-managed keys, and the default account has zero assigned roles in captured policies and zero own IAM bindings; Run does not use it.
 
-Personal deletion protection is explicitly false so a bounded test can be
-cleaned up through a separately reviewed reverse plan. After leaving identity,
-**pass the intended stage and image to every plan**. Terraform does not remember
-previous input values: omitting them can propose deleting later resources. Never
-accept those deletes as a routine update. Keep an ignored private var-file or
-supply both inputs explicitly, and review the saved plan every time.
+## Bounded HTTP/model validation
 
-## Offline plan gates
+The user explicitly authorized exactly three requests without retry: anonymous `GET /healthz`, operator-authenticated `GET /healthz`, and authenticated `POST /v1/warmup {}` with a 270-second client cap. The [HTTP helper](../../../../scripts/verify_personal_gcp_private_inference_http.py) requires the actual successful configuration audit, original approval, immutable plan/image/state and fresh eligible-credit evidence. It uses the existing operator identity without new grants, impersonation, static keys or persisted tokens.
 
-The original `check_plan.py` is frozen for the first seven-create plan at
-`fdfaf23`. It intentionally rejects existing state and must not be loosened or
-used for these increments. Its earlier commands and actual result are recorded
-in the [first-plan review](../../../../docs/c-personal-first-plans-20261024.md).
+The cold warmup may download 15 locked artifacts totaling **2,229,943,281 bytes**. Report its actual outcome separately from startup readiness. Even a successful warmup does not prove AWS-role token exchange, real cloud media inference, video processing, browser CORS or two-user acceptance. The earlier [local real-model smoke](../../../../docs/c-local-real-model-smoke-20261024.md) is local evidence only.
 
-The separate `check_runtime_plan.py` reviews private `terraform show -json`
-output for exactly one forward increment:
+These frozen helpers and results are single-execution evidence artifacts. Do not rerun an apply, overwrite a failed summary, delete an attempt marker or infer permission from a committed helper. The final read-only inventory audit normalizes only the exact canonical service path in a deep copy and preserves all prior evidence.
 
-```sh
-python3 infra/gcp/environments/personal/check_runtime_plan.py \
-  --stage registry \
-  --plan-json infra/gcp/environments/personal/private/registry.json
-```
+## Cost, cleanup and delivery
 
-For a private-inference plan, additionally supply `--stage private-inference`
-and `--image` with the independently verified full registry digest. The gate
-requires exact prior/new addresses, unchanged existing identities and resources,
-known security settings, an immutable image, the exact service account/member,
-authentication, environment and resource limits. Drift, imports, replacements,
-updates, deletes, extra resources and command/volume overrides are rejected.
-The [preparation evidence](../../../../evidence/c-private-inference-prepared-20261024.json) records the actual local checks.
-Inspect the textual saved plan too, freeze its binary hash and recheck the live
-identity/state immediately before applying that same binary.
+Additional personal-spend limit is **A$0**. Existing eligible credits expire **28 October 2026**; review and clean up by **27 October Melbourne** unless a separately verified funded period is available. Minimum zero/maximum one and billing alerts are not hard spending caps; registry storage persists. No automatic cleanup is configured.
 
-Exit 0 only confirms offline constraints. This plan's provenance and refresh
-checkpoint were additionally checked against retained successful evidence;
-funding and runtime operation still require separate verification. A new actual
-approval must cover the exact four-create saved binary, service invoker access,
-startup compute and Google's automatic Run service agent with
-`roles/run.serviceAgent`. The prepared apply/HTTP helpers do not confer approval.
-If approved separately, bounded HTTP testing consists of anonymous health,
-operator-authenticated health and one authenticated warmup. A cold warmup may
-download 15 files totaling 2,229,943,281 bytes; none has run under this plan.
+Personal deletion protection is false to allow a reviewed reverse plan. Preserve restore artifacts and state custody before cleanup; never clear the image or revert the stage as an informal pause command. A new reverse review must distinguish resources removed from Terraform state, APIs left enabled by `disable_on_destroy=false`, Google-managed role grants and actual registry content cleanup.
 
-## Actual local checks and remaining work
+Source and safe evidence are delivered to the approved [private repository](https://github.com/xihan-u/aussie-ecoguard-fit3184-a2-private). Credentials, full state/plans/policies, approval receipts, billing data and raw logs stay outside Git. Group/teaching access and the earlier public repositories require separate handoff.
 
-The prepared source passed Terraform **1.17.0** / Google **7.46.1** validation in
-a Linux amd64 container using official archives matched to the reviewed hashes,
-with networking disabled: **zero errors and warnings**. The earlier macOS
-provider startup failed before schema checking; the Linux result resolves that
-local validation gap. All **38 GCP offline tests** passed, including 23 new
-increment regressions. These regression tests use synthetic plans. A separate
-real registry plan passed its 12 checks and the approved apply now completed,
-with nine-resource state and live configuration verification. The actual image
-publication then passed remote digest/byte verification without changing that
-state or IAM. The first private-service plan was retained as blocked (11/13)
-because of an unknown protocol name and publication metadata drift. Explicit
-`http1` and a separate exact state-only refresh resolved those issues without
-weakening the gate. The second real plan passed 13/13 with the existing nine
-resources unchanged; its concrete source, plan hash and checkpoint chain are in
-the linked plan review. No private-service apply or HTTP warmup has occurred.
-
-```sh
-python3 -m unittest discover -s infra/gcp/tests -v
-```
-
-A separate [real local model smoke](../../../../docs/c-local-real-model-smoke-20261024.md)
-passed using predownloaded weights and a public image. It does not establish
-Cloud Run's in-memory cache envelope, cold download deadline, authenticated warmup,
-concurrency, video processing or Lambda-role federation. Complete those actual
-checks before application activation and retain failed attempts.
-
-Existing Google credits expire **28 October**. The additional personal-spend
-budget remains **A$0**. Reverify eligible funding and define bounded tests plus
-cleanup no later than 27 October Melbourne, unless a separately verified funded
-period is available. Minimum zero does not remove image-storage charges. There
-is no automatic cleanup or guaranteed account-wide spend stop. Stepping back to
-an earlier stage is a destructive reverse increment that needs its own reviewed
-plan, retained artifacts and state backup; the forward gate rejects it.
-
-Source/evidence delivery now targets the approved
-[private repository](https://github.com/xihan-u/aussie-ecoguard-fit3184-a2-private).
-Full state, plans, policies, approval records and credentials remain outside Git.
-
-Prepared with Codex assistance. Private inference remains a reviewed plan awaiting
-new execution approval.
+Prepared with Codex assistance. Current configuration is verified; remaining integration outcomes require their own actual evidence.

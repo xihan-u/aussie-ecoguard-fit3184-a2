@@ -1,5 +1,7 @@
 # Private inference saved-plan review - 24 October 2026
 
+Historical pre-apply record at 23:00 UTC. The later user-approved apply and read-only configuration verification are recorded in the [actual deployment report](c-private-inference-deployed-20261024.md). The observations below retain their original pre-apply scope.
+
 The second real GCP private-inference plan passed **13/13 checks** at
 `2026-10-23T23:00:15.360525+00:00` (24 October Melbourne): **four creates, nine
 no-ops**, with zero other changes, drift, warnings, failed checks or unknown
