@@ -7,17 +7,18 @@ zero user-managed keys were verified. See the [actual deployment report](../../.
 The AWS application remains paused. Token exchange and cloud inference remain
 unverified.
 
-The current source prepares two later increments. **Neither has been planned or
-applied in the real cloud.** The default stage is `identity`; committing this
-source does not activate compute. The child module's historical
+The current source prepares two later increments. The real registry saved plan
+passed **12/12 checks**, with two creates and seven no-ops; it has not been applied.
+Private inference has not yet been planned. See the [saved-plan review](../../../../docs/c-registry-saved-plan-review-20261024.md).
+The default stage is `identity`; committing this source does not activate compute. The child module's historical
 `deployment.auto.tfvars` is not loaded by this separate root.
 
 ## Existing state and source custody
 
 The authoritative personal backend is the existing GCP CloudShell workspace
 `~/ecoguard-c-personal-20261023/source/infra/gcp/environments/personal/state/terraform.tfstate`.
-Its checkout remains at `fdfaf23` until an operator deliberately prepares the next
-plan. Preserve the private post-apply backup and use one operator. Git does not
+Its controlled checkout moved to `00d58e0` for the reviewed registry plan; the
+last applied identity source remains `fdfaf23`. Preserve the private post-apply backup and use one operator. Git does not
 share state. Do not create a second owner, copy/import the historical team's
 state, or initialize this local clone and apply against an empty state.
 
@@ -104,8 +105,8 @@ a Linux amd64 container using official archives matched to the reviewed hashes,
 with networking disabled: **zero errors and warnings**. The earlier macOS
 provider startup failed before schema checking; the Linux result resolves that
 local validation gap. All **38 GCP offline tests** passed, including 23 new
-increment regressions. These tests use synthetic plans; no real increment plan
-or cloud apply has occurred.
+increment regressions. These regression tests use synthetic plans. A separate real registry plan has
+now passed its 12 checks; no increment apply has occurred.
 
 ```sh
 python3 -m unittest discover -s infra/gcp/tests -v
