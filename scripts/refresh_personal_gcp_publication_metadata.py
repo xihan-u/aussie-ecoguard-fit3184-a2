@@ -158,13 +158,13 @@ def inspect(document, prior):
     all_changes = document.get("resource_changes", [])
     require(isinstance(all_changes, list), "Malformed refresh resource changes")
     planned_values = document.get("planned_values", {})
-    if "root_module" in planned_values:
+    if "root_module" in planned_values and planned_values["root_module"] != {}:
         planned = values(planned_values["root_module"])
         require(planned == expected, "Planned nine values changed outside exact metadata")
     else:
         # Terraform v1.17.0 jsonplan/plan.go: marshalPlannedValues uses changes;
         # refresh-only has none, so its authoritative nine are in prior_state.
-        require(not all_changes, "Omitted planned root requires zero resource changes")
+        require(not all_changes, "Empty planned root requires zero resource changes")
         planned = refreshed
     changes = [r for r in all_changes if r.get("mode") == "managed"]
     require(not changes or len(changes) == 9 and {r.get("address") for r in changes} == set(prior), "Cloud action resource set differs")
