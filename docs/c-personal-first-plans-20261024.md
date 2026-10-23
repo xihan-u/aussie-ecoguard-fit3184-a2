@@ -1,5 +1,9 @@
 # Personal first saved-plan review - 24 October 2026
 
+This is the **pre-apply snapshot**. The approved deployment subsequently ran,
+with a three-mapping AWS recovery; see the [actual deployment and live checks](c-personal-foundation-deployed-20261024.md)
+for the current outcome. The review below describes its original execution boundary.
+
 Both plans below were generated in the authorized cloud-native shells from
 source revision `fdfaf23b7d888c9579668d5c12c06ec649660191`. The real account/project
 were independently rechecked immediately before planning. This record is a

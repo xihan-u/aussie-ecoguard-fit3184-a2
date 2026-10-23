@@ -1,9 +1,10 @@
-# Personal AWS environment: reviewable preparation only
+# Personal AWS paused environment
 
 This root reuses `infra/aws` for account **011154879765 / us-east-1** under
-`ecoguard3184-personal`. It does not deploy by being committed or pushed. No
-creation, role change, cross-cloud trust change or application resume has been
-performed by this preparation. The account's Free plan and credits were checked
+`ecoguard3184-personal`. The paused foundation now has 55 managed resources;
+see the [actual deployment and live checks](../../../../docs/c-personal-foundation-deployed-20261024.md).
+Committing or pushing source does not apply infrastructure. Application processing
+remains paused. The account's Free plan and credits were checked
 in the console separately; service eligibility, available credits and A$0 extra
 personal spend must still hold when a deployment is authorized.
 
@@ -106,7 +107,8 @@ not evidence of AWS execution, federation, models or cloud acceptance.
 
 These commands describe the review procedure. The actual first saved plan and
 its checks are recorded in [the 24 October review](../../../../docs/c-personal-first-plans-20261024.md);
-no apply has occurred. Terraform 1.10+ and the locked AWS provider are required. Run from the
+the later apply and recovery are recorded separately in the deployment report.
+Terraform 1.10+ and the locked AWS provider are required. Run from the
 repository root. On a local computer, prefix Terraform/STS commands with
 `AWS_PROFILE=ecoguard-personal` only after configuring/verifying that profile;
 omit that prefix in the verified CloudShell.
@@ -164,9 +166,11 @@ authorized runtime activation restores the existing queue cap of two; this fix
 does not enable pollers or increase the functions' concurrency. See the
 [AWS SQS scaling guide](https://docs.aws.amazon.com/lambda/latest/dg/services-sqs-scaling.html).
 
-There is no `apply` command in this preparation. Deployment authorization and a
-review of the concrete saved plan remain prerequisites. A fresh plan must replace
-a stale one after configuration, package, state or account changes.
+There is no general-purpose `apply` command in this runbook. The approved first
+deployment and scoped recovery have already run. Future changes require their
+own concrete saved-plan review. A fresh plan must replace a stale one after
+configuration, package, state or account changes. Existing state deliberately
+fails the first-plan gate; do not reuse or weaken that gate for an increment.
 
 ## Runtime role scope and SDK mapping
 
@@ -222,8 +226,11 @@ The helper's staged package imports and native-library operations passed in a
 network-disabled `python -S` container, using the actual staged dependencies.
 A real saved plan subsequently passed 28/28 checks in AWS CloudShell, with
 55 creates and no updates or deletes. See the linked 24 October review for its
-exact source and hashes. Role/bucket creation, deploy/apply, runtime tests,
-protected inference and WIF remain unperformed.
+exact source and hashes. The later deployment retained 52 successfully created
+resources and recovered the three disabled mappings using the corrected source.
+Forty live paused-configuration checks passed. See the deployment report for the
+exceptional state-preserving recovery and S3 refresh limitation. Runtime tests,
+protected inference and actual WIF token exchange remain unperformed.
 
 Run the focused offline checker regression without cloud access or extra packages:
 

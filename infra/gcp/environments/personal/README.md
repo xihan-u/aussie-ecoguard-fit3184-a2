@@ -1,4 +1,4 @@
-# Personal GCP identity-only preparation
+# Personal GCP identity-only environment
 
 This separate root reuses `infra/gcp` for **ecoguard-fit3184-a2-2026**, project
 number **995070689587**, in `us-central1`. It fixes `identity_only=true` and leaves
@@ -8,7 +8,8 @@ historical `deployment.auto.tfvars` is not loaded. The locked manifest SHA-256 i
 
 Committing this root creates no IAM resources or trust. The intended AWS identity
 is account **011154879765**, role **ecoguard3184-personal-lambda**, AWS region
-`us-east-1`. That role has not yet been created or verified by this preparation.
+`us-east-1`. The role was subsequently created and verified before the approved
+seven-resource GCP identity plan was applied; see the [actual deployment and live checks](../../../../docs/c-personal-foundation-deployed-20261024.md).
 Before planning, independently verify the Google project ID/number and
 authenticated operator, and review the intended role ARN against the separate
 AWS plan. A read-only identity plan may refer to that not-yet-created role.
@@ -74,7 +75,10 @@ invalid/incomplete input. It does not authorize applying, verify the AWS role,
 prove Google permissions or establish a working cross-cloud deployment. Review
 the textual plan too. The actual seven-create saved plan passed 14/14 checks in
 GCP CloudShell; its source and hash are in [the 24 October review](../../../../docs/c-personal-first-plans-20261024.md).
-No apply or new IAM grant has occurred.
+The approved apply has now completed. Live reads verified the exact provider,
+single service-account grant and absence of user-managed keys; real token exchange
+and runtime operation remain unverified. These first-plan gates intentionally
+reject the now-existing state and must not be loosened for a future increment.
 A runtime deployment requires a different reviewed plan and verified funding;
 this root creates no Cloud Run service, model bucket or image registry.
 

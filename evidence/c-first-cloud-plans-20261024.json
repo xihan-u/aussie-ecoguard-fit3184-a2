@@ -1,4 +1,6 @@
 {
+  "recordType": "pre-apply-plan-review",
+  "subsequentOutcomeRecord": "c-personal-foundation-deployed-20261024.json",
   "reviewDate": "2026-10-24",
   "reviewTimezone": "Australia/Melbourne",
   "sourceRevision": "fdfaf23b7d888c9579668d5c12c06ec649660191",
