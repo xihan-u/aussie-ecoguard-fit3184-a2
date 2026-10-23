@@ -35,10 +35,10 @@ variable "media_bucket" {
 }
 variable "manifest_sha256" {
   type    = string
-  default = "6947e779fb740f252e35cff6f4ea90f03a87a3fe07d52d1c924bc8319ab1f2a6"
+  default = "639595e1e9ffe18cb11ead1c7480ffe7a31bf767f6cbaf6b8375829227a569ae"
   validation {
-    condition     = can(regex("^[a-f0-9]{64}$", var.manifest_sha256))
-    error_message = "Manifest hash must be the SHA-256 of the image's locked manifest."
+    condition     = var.manifest_sha256 == filesha256("${path.module}/../../config/model.locked.json")
+    error_message = "Manifest hash must match this checkout's config/model.locked.json. Rebuild the image when the locked manifest changes."
   }
 }
 variable "aws_region" {
