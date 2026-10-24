@@ -52,7 +52,7 @@ resource "aws_lambda_function" "zip" {
   handler                        = "ecoguard_aws.handlers.${each.key}"
   timeout                        = each.value
   memory_size                    = 512
-  reserved_concurrent_executions = var.runtime_enabled ? -1 : 0
+  reserved_concurrent_executions = local.function_concurrency[each.key]
   environment { variables = local.runtime_environment }
   # The role ARN alone does not wait for its SQS/table/storage permissions.
   depends_on = [aws_cloudwatch_log_group.functions, aws_iam_role_policy.runtime]
@@ -67,16 +67,16 @@ resource "aws_lambda_function" "ingest" {
   image_config { command = ["ecoguard_aws.handlers.ingest"] }
   timeout                        = 120
   memory_size                    = 2048
-  reserved_concurrent_executions = var.runtime_enabled ? -1 : 0
+  reserved_concurrent_executions = local.function_concurrency["ingest"]
   ephemeral_storage { size = 1024 }
   environment { variables = local.runtime_environment }
-  depends_on = [aws_cloudwatch_log_group.functions, aws_iam_role_policy.runtime]
+  depends_on = [aws_cloudwatch_log_group.functions, aws_iam_role_policy.runtime, aws_ecr_repository_policy.lambda_ingest]
 }
 resource "aws_apigatewayv2_api" "app" {
   count                        = var.deploy_api ? 1 : 0
   name                         = "${local.name}-api"
   protocol_type                = "HTTP"
-  disable_execute_api_endpoint = !var.runtime_enabled
+  disable_execute_api_endpoint = !local.api_endpoint_enabled
   cors_configuration {
     allow_origins = var.frontend_origins
     allow_methods = ["GET", "POST", "PATCH", "DELETE", "OPTIONS"]
@@ -134,32 +134,33 @@ resource "aws_lambda_event_source_mapping" "zip_queues" {
   event_source_arn        = aws_sqs_queue.work[each.key].arn
   function_name           = aws_lambda_function.zip[each.key].arn
   batch_size              = 1
-  enabled                 = var.runtime_enabled && (each.key != "infer" || local.processing_ready)
+  enabled                 = local.queue_consumers_enabled[each.key]
   function_response_types = ["ReportBatchItemFailures"]
   # AWS validates this cap even when a new mapping is disabled. Omit it while
   # the function's reserved concurrency is zero; keep the live queue cap at 2.
   dynamic "scaling_config" {
-    for_each = var.runtime_enabled ? [true] : []
+    for_each = local.queue_scaling_enabled[each.key] ? [true] : []
     content { maximum_concurrency = 2 }
   }
 }
 resource "aws_lambda_event_source_mapping" "ingest" {
-  count                   = local.has_worker ? 1 : 0
-  event_source_arn        = aws_sqs_queue.work["ingest"].arn
-  function_name           = aws_lambda_function.ingest[0].arn
+  count            = local.has_worker ? 1 : 0
+  event_source_arn = aws_sqs_queue.work["ingest"].arn
+  # Keep the exact target known before create while retaining the Lambda dependency.
+  function_name           = local.controlled_runtime ? "arn:aws:lambda:${var.region}:${local.runtime_account}:function:${aws_lambda_function.ingest[0].function_name}" : aws_lambda_function.ingest[0].arn
   batch_size              = 1
-  enabled                 = var.runtime_enabled && local.processing_ready
+  enabled                 = local.queue_consumers_enabled["ingest"]
   function_response_types = ["ReportBatchItemFailures"]
   dynamic "scaling_config" {
-    for_each = var.runtime_enabled ? [true] : []
+    for_each = local.queue_scaling_enabled["ingest"] ? [true] : []
     content { maximum_concurrency = 2 }
   }
 }
 resource "aws_s3_bucket_notification" "uploads" {
-  count  = local.processing_ready ? 1 : 0
+  count  = local.manage_upload_notifications ? 1 : 0
   bucket = local.bucket_name
   dynamic "queue" {
-    for_each = var.runtime_enabled ? [true] : []
+    for_each = local.upload_notifications_enabled ? [true] : []
     content {
       queue_arn     = aws_sqs_queue.work["ingest"].arn
       events        = ["s3:ObjectCreated:*"]
@@ -172,7 +173,7 @@ resource "aws_cloudwatch_event_rule" "maintenance" {
   for_each            = var.deploy_api ? { outbox = "rate(1 minute)", cleanup = "rate(5 minutes)" } : {}
   name                = "${local.name}-${each.key}"
   schedule_expression = each.value
-  state               = var.runtime_enabled ? "ENABLED" : "DISABLED"
+  state               = local.schedules_enabled[each.key] ? "ENABLED" : "DISABLED"
 }
 resource "aws_cloudwatch_event_target" "maintenance" {
   for_each = aws_cloudwatch_event_rule.maintenance
@@ -188,6 +189,6 @@ resource "aws_lambda_permission" "maintenance" {
   source_arn    = each.value.arn
 }
 output "api_url" { value = var.deploy_api ? aws_apigatewayv2_api.app[0].api_endpoint : "" }
-output "processing_enabled" { value = var.runtime_enabled && local.processing_ready }
+output "processing_enabled" { value = local.processing_ready && local.queue_consumers_enabled["ingest"] && local.queue_consumers_enabled["infer"] }
 output "runtime_enabled" { value = var.runtime_enabled }
 output "lambda_names" { value = { for k, f in aws_lambda_function.zip : k => f.function_name } }

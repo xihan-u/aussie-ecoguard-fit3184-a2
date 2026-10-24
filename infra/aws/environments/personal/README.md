@@ -1,5 +1,16 @@
 # Personal AWS paused environment
 
+**Prepared staged-runtime implementation; AWS wiring not yet planned or applied.**
+It defines four fixed `deployment_stage` profiles. The existing 55-resource
+foundation remains paused. The default is `foundation-paused`; every profile
+keeps `runtime_enabled=false`. Read [the controls, tests and release
+conditions](STAGED-RUNTIME-DRAFT.md) before any stage transition.
+The implementation adds the narrowly scoped ECR retrieval policy and an offline
+full existing-state gate for the paused 55-to-59 wiring increment. Read
+[the exact increment and pending evidence](STAGED-INCREMENT-REVIEW.md).
+The historical first-plan checker below cannot approve a stage transition, and
+the new gate never authorizes apply or later runtime activation.
+
 This root reuses `infra/aws` for account **011154879765 / us-east-1** under
 `ecoguard3184-personal`. The paused foundation now has 55 managed resources;
 see the [actual deployment and live checks](../../../../docs/c-personal-foundation-deployed-20261024.md).
@@ -11,8 +22,8 @@ personal spend must still hold when a deployment is authorized.
 The historical course root and its `deployment.auto.tfvars` remain intact.
 Terraform does not load a child module's auto tfvars. This root explicitly sets
 the account allowlist, region, dedicated role and all paused runtime inputs; it
-does not expose a runtime-enable switch. Protected inference URL, worker image and Lex IDs
-remain empty. The default API endpoint, every Lambda, queue consumer, maintenance
+does not expose a runtime-enable switch. The foundation profile keeps protected
+inference URL, worker image and Lex IDs empty. The default API endpoint, every Lambda, queue consumer, maintenance
 schedule, public registration and S3 data access are paused in the proposed stack.
 
 ## State, account and package prerequisites

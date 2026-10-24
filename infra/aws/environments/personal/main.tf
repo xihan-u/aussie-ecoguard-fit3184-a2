@@ -16,6 +16,66 @@ variable "lambda_zip" {
     condition     = startswith(var.lambda_zip, "/") && endswith(var.lambda_zip, ".zip") && fileexists(var.lambda_zip)
     error_message = "Supply an existing real .zip via its absolute POSIX path. Build and review the actual Lambda package first."
   }
+  validation {
+    condition     = try(filesha256(var.lambda_zip) == "fafb94bf948312f1fef8998b5619567ad3c3471381a34e9e816cec87b034d9f6", false)
+    error_message = "Every draft stage requires the unchanged reviewed seven-function ZIP (SHA-256 fafb94bf948312f1fef8998b5619567ad3c3471381a34e9e816cec87b034d9f6). A package change needs separate review."
+  }
+}
+
+variable "deployment_stage" {
+  type        = string
+  description = "Reviewed manual stage only. After wiring, return to wiring-paused, never foundation-paused: foundation would remove ingest resources."
+  default     = "foundation-paused"
+  nullable    = false
+  validation {
+    condition     = contains(["foundation-paused", "wiring-paused", "auth-smoke", "media-manual"], var.deployment_stage)
+    error_message = "Choose foundation-paused, wiring-paused, auth-smoke or media-manual."
+  }
+}
+
+variable "worker_image" {
+  type        = string
+  description = "Independently verified published ECR manifest URI. Syntax alone does not prove publication, architecture or provenance."
+  default     = ""
+  nullable    = false
+  validation {
+    condition = var.deployment_stage == "foundation-paused" ? var.worker_image == "" : can(regex(
+      "^011154879765[.]dkr[.]ecr[.]us-east-1[.]amazonaws[.]com/ecoguard3184-personal-worker@sha256:[0-9a-f]{64}$",
+      var.worker_image
+    ))
+    error_message = "Foundation requires an empty image; other stages require the exact personal ECR repository with a verified published sha256 digest, never a tag or local image ID."
+  }
+}
+
+variable "inference_url" {
+  type        = string
+  description = "Fixed private Run base URL; CloudRunClient also uses this exact string as its token audience. Reverify the service identity before a real plan."
+  default     = ""
+  nullable    = false
+  validation {
+    condition = var.deployment_stage == "foundation-paused" ? var.inference_url == "" : (
+      var.inference_url == "https://ecoguard-inference-adlnb7yumq-uc.a.run.app"
+    )
+    error_message = "Foundation requires an empty URL; other stages require exactly https://ecoguard-inference-adlnb7yumq-uc.a.run.app without a trailing slash, path or query."
+  }
+}
+
+locals {
+  stage_reservations = {
+    foundation-paused = {}
+    wiring-paused     = {}
+    auth-smoke        = { api = 1 }
+    media-manual      = { api = 1, ingest = 1, infer = 1, outbox = 1, delete = 1, cleanup = 1 }
+  }
+  runtime_controls = {
+    function_concurrency         = lookup(local.stage_reservations, var.deployment_stage, {})
+    media_data_enabled           = var.deployment_stage == "media-manual"
+    api_endpoint_enabled         = false
+    public_signup_enabled        = false
+    queue_consumers              = []
+    schedules                    = []
+    upload_notifications_enabled = false
+  }
 }
 
 # infra/aws contains its own provider. This legacy-provider module must remain
@@ -24,25 +84,28 @@ variable "lambda_zip" {
 module "ecoguard" {
   source = "../.."
 
-  allowed_account_ids   = ["011154879765"]
-  region                = "us-east-1"
-  prefix                = "ecoguard3184"
-  environment           = "personal"
-  manage_media_bucket   = true
-  manage_execution_role = true
-  execution_role_arn    = ""
-  deploy_api            = true
-  runtime_enabled       = false
-  lambda_zip            = var.lambda_zip
+  allowed_account_ids         = ["011154879765"]
+  region                      = "us-east-1"
+  prefix                      = "ecoguard3184"
+  environment                 = "personal"
+  manage_media_bucket         = true
+  manage_execution_role       = true
+  execution_role_arn          = ""
+  deploy_api                  = true
+  runtime_enabled             = false
+  runtime_controls            = local.runtime_controls
+  manage_upload_notifications = false
+  lambda_zip                  = var.lambda_zip
 
-  model_manifest_version = "ecoguard-models-2026-10-08-v3"
-  frontend_origins       = ["http://localhost:5173", "http://127.0.0.1:5173"]
-  web_url                = "http://127.0.0.1:5173"
-  worker_image           = ""
-  inference_url          = ""
-  google_invoker_email   = ""
-  lex_bot_id             = ""
-  lex_alias_id           = ""
+  model_manifest_version        = "ecoguard-models-2026-10-08-v3"
+  frontend_origins              = ["http://localhost:5173", "http://127.0.0.1:5173"]
+  web_url                       = "http://127.0.0.1:5173"
+  worker_image                  = var.worker_image
+  manage_ingest_ecr_pull_policy = var.deployment_stage != "foundation-paused"
+  inference_url                 = var.inference_url
+  google_invoker_email          = var.deployment_stage == "foundation-paused" ? "" : "ecoguard-aws-invoker@ecoguard-fit3184-a2-2026.iam.gserviceaccount.com"
+  lex_bot_id                    = ""
+  lex_alias_id                  = ""
 }
 
 output "deployment_identity" {
@@ -56,3 +119,5 @@ output "cognito_client_id" { value = module.ecoguard.cognito_client_id }
 output "worker_repository_url" { value = module.ecoguard.worker_repository_url }
 output "runtime_enabled" { value = module.ecoguard.runtime_enabled }
 output "processing_enabled" { value = module.ecoguard.processing_enabled }
+output "deployment_stage" { value = var.deployment_stage }
+output "runtime_controls" { value = module.ecoguard.runtime_controls }

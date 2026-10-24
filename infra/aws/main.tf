@@ -60,7 +60,7 @@ resource "aws_s3_bucket_policy" "media_tls" {
       Sid       = "DenyInsecureTransport", Effect = "Deny", Principal = "*", Action = "s3:*"
       Resource  = [local.bucket_arn, "${local.bucket_arn}/*"]
       Condition = { Bool = { "aws:SecureTransport" = "false" } }
-      }], var.runtime_enabled ? [] : [{
+      }], local.media_data_enabled ? [] : [{
       # Reject existing signed URLs as well as fresh data requests. Bucket policy
       # management remains allowed so the administrator can restore this switch.
       Sid       = "DenyDataAccessWhileRuntimePaused"
@@ -131,7 +131,7 @@ resource "aws_cognito_user_pool" "users" {
   name                     = "${local.name}-users"
   username_attributes      = ["email"]
   auto_verified_attributes = ["email"]
-  admin_create_user_config { allow_admin_create_user_only = !var.runtime_enabled }
+  admin_create_user_config { allow_admin_create_user_only = !local.public_signup_enabled }
   username_configuration { case_sensitive = false }
   password_policy {
     minimum_length                   = 12
