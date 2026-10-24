@@ -37,9 +37,12 @@ locals {
   }
 }
 resource "aws_cloudwatch_log_group" "functions" {
-  for_each          = merge(local.zip_functions, local.has_worker ? { ingest = 120 } : {})
-  name              = "/aws/lambda/${local.name}-${each.key}"
-  retention_in_days = 7
+  for_each                    = merge(local.zip_functions, local.has_worker ? { ingest = 120 } : {})
+  name                        = "/aws/lambda/${local.name}-${each.key}"
+  retention_in_days           = 7
+  deletion_protection_enabled = false
+  log_group_class             = "STANDARD"
+  tags                        = {}
 }
 resource "aws_lambda_function" "zip" {
   for_each                       = local.zip_functions
@@ -70,6 +73,12 @@ resource "aws_lambda_function" "ingest" {
   reserved_concurrent_executions = local.function_concurrency["ingest"]
   ephemeral_storage { size = 1024 }
   environment { variables = local.runtime_environment }
+  logging_config {
+    log_format = "Text"
+    log_group  = aws_cloudwatch_log_group.functions["ingest"].name
+  }
+  tracing_config { mode = "PassThrough" }
+  tags       = {}
   depends_on = [aws_cloudwatch_log_group.functions, aws_iam_role_policy.runtime, aws_ecr_repository_policy.lambda_ingest]
 }
 resource "aws_apigatewayv2_api" "app" {
@@ -147,10 +156,12 @@ resource "aws_lambda_event_source_mapping" "ingest" {
   count            = local.has_worker ? 1 : 0
   event_source_arn = aws_sqs_queue.work["ingest"].arn
   # Keep the exact target known before create while retaining the Lambda dependency.
-  function_name           = local.controlled_runtime ? "arn:aws:lambda:${var.region}:${local.runtime_account}:function:${aws_lambda_function.ingest[0].function_name}" : aws_lambda_function.ingest[0].arn
-  batch_size              = 1
-  enabled                 = local.queue_consumers_enabled["ingest"]
-  function_response_types = ["ReportBatchItemFailures"]
+  function_name                      = local.controlled_runtime ? "arn:aws:lambda:${var.region}:${local.runtime_account}:function:${aws_lambda_function.ingest[0].function_name}" : aws_lambda_function.ingest[0].arn
+  batch_size                         = 1
+  enabled                            = local.queue_consumers_enabled["ingest"]
+  function_response_types            = ["ReportBatchItemFailures"]
+  maximum_batching_window_in_seconds = 0
+  tags                               = {}
   dynamic "scaling_config" {
     for_each = local.queue_scaling_enabled["ingest"] ? [true] : []
     content { maximum_concurrency = 2 }

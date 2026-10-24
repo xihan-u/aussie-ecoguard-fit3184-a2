@@ -35,6 +35,26 @@ NEW_READONLY={
         "last_modified","source_code_size","version","signing_job_arn","signing_profile_version_arn"},
     FOCUS.MAPPING:{"arn","id","uuid","function_arn","last_modified","last_processing_result","state","state_transition_reason"},
 }
+# Provider 6.67.0 also marks these optional attributes/blocks unknown when the
+# corresponding AWS feature does not apply. These are NOT a general computed
+# allowlist: only the exact named log, immutable Image Lambda and disabled SQS
+# mapping below may project them. Known nonempty alternatives are rejected.
+NEW_APPLICABILITY_OUTPUTS={
+    FOCUS.LOG:{"name_prefix"},
+    FOCUS.INGEST:{"code_sha256","source_code_hash"},
+    FOCUS.MAPPING:{"amazon_managed_kafka_event_source_config","self_managed_kafka_event_source_config",
+        "maximum_record_age_in_seconds","maximum_retry_attempts","parallelization_factor"},
+    FOCUS.POLICY:set(),
+}
+SQS_COMPUTED_DEFAULTS={"amazon_managed_kafka_event_source_config":[],"self_managed_kafka_event_source_config":[],
+    "maximum_record_age_in_seconds":0,"maximum_retry_attempts":0,"parallelization_factor":0}
+# Exact known null spellings observed in the new SQS plan, versus the refreshed
+# existing SQS profile. Never apply these to another resource or unknown value.
+SQS_UNSET_DEFAULTS={"bisect_batch_on_function_error":False,"kms_key_arn":"",
+    "queues":[],"topics":[],"starting_position":"","starting_position_timestamp":"","tumbling_window_in_seconds":0}
+
+
+def new_output_fields(address):return NEW_READONLY[address]|NEW_APPLICABILITY_OUTPUTS[address]
 
 
 def require(ok,reason):
@@ -82,16 +102,33 @@ def existing_zip_values(old,after,planned,unknown,address):
     require(after==planned==expected,"Existing ZIP differs outside the two exact environment keys: "+address)
 
 
-def new_known_values(address,change,planned):
-    fields=NEW_READONLY[address];unknown=change.get("after_unknown",{})
+def new_known_values(address,change,planned,image):
+    fields=new_output_fields(address);unknown=change.get("after_unknown",{})
+    after=change["after"]
+    if address==FOCUS.LOG:
+        require(all(value.get("name")=="/aws/lambda/"+PREFIX+"-ingest" for value in (after,planned)),"Optional log prefix projection requires the exact explicit log name")
+        require(all(value.get("name_prefix") in (None,"") for value in (after,planned)),"Named log includes a generated name prefix")
+    elif address==FOCUS.INGEST:
+        require(FOCUS.IMAGE_PATTERN.fullmatch(image) and all(value.get("package_type")=="Image" and value.get("image_uri")==image
+            and value.get("function_name")==PREFIX+"-ingest" and all(value.get(key) in (None,"") for key in ("filename","handler","runtime","code_sha256","source_code_hash")) for value in (after,planned)),
+            "Image hash projection requires the exact digest image and no ZIP configuration")
+    elif address==FOCUS.MAPPING:
+        queue=f"arn:aws:sqs:{REGION}:{ACCOUNT}:{PREFIX}-ingest"
+        require(all(value.get("event_source_arn")==queue and value.get("function_name")==FOCUS.INGEST_ARN
+            and value.get("enabled") is False and value.get("batch_size")==1 and value.get("scaling_config")==[]
+            for value in (after,planned)),"Inapplicable stream/Kafka outputs require the exact disabled SQS target")
+        for field,default in SQS_COMPUTED_DEFAULTS.items():
+            if unknown.get(field) is True:continue
+            require(all(field in value and type(value[field]) is type(default) and value[field]==default for value in (after,planned)),
+                "Known SQS stream/Kafka output differs from the existing inactive default: "+field)
     for path in unknown_paths(unknown):
         require(len(path)==1 and path[0] in fields and unknown.get(path[0]) is True,
                 "New resource has unreviewed/security unknown path: "+address+" "+str(path))
         require(change["after"].get(path[0]) is None and planned.get(path[0]) is None,"Unknown output also contains known value")
-    require(strip_outputs(change["after"],fields)==strip_outputs(planned,fields),"New planned/change configured values differ")
+    require(strip_outputs(after,fields)==strip_outputs(planned,fields),"New planned/change configured values differ")
     for field in fields:
         if field in unknown and unknown[field] is True:continue
-        require(change["after"].get(field)==planned.get(field),"Known new output differs")
+        require(after.get(field)==planned.get(field),"Known new output differs")
     return strip_outputs(planned,fields)
 
 
@@ -134,11 +171,16 @@ def inspect_plan(document,physical,*,image,zip_sha,zip_filename,run_url,wif,root
             require(actual==expected and json.loads(after["policy"])==json.loads(future["policy"]),"IAM edges changed beyond one ingest log ARN")
         else:
             require(not unknown_paths(change.get("after_unknown",{})) and old==after==future,"Existing no-op full values differ")
-    new={a:new_known_values(a,rows[a]["change"],planned[a]) for a in FOCUS.ADDITIONS}
+    new={a:new_known_values(a,rows[a]["change"],planned[a],image) for a in FOCUS.ADDITIONS}
     # The new log group uses the same known safe profile as the deployed API log.
-    log_template=strip_outputs(physical_values[MODULE+'aws_cloudwatch_log_group.functions["api"]'],NEW_READONLY[FOCUS.LOG])
+    old_log=physical_values[MODULE+'aws_cloudwatch_log_group.functions["api"]']
+    require(old_log.get("name_prefix") in (None,""),"Physical named log has a generated prefix")
+    log_template=strip_outputs(old_log,new_output_fields(FOCUS.LOG))
     require(log_template.get("retention_in_days")==7 and not log_template.get("kms_key_id")
-            and log_template.get("skip_destroy") is False and log_template.get("log_group_class")=="STANDARD","Physical log profile is not the reviewed safe default")
+            and log_template.get("deletion_protection_enabled") is False and log_template.get("skip_destroy") is False
+            and log_template.get("log_group_class")=="STANDARD","Physical log profile is not the reviewed safe default")
+    require(log_template.get("kms_key_id") in (None,"") and new[FOCUS.LOG].get("kms_key_id") in (None,""),"Log must have no KMS override")
+    log_template["kms_key_id"]=new[FOCUS.LOG].get("kms_key_id")
     log_template["name"]="/aws/lambda/"+PREFIX+"-ingest"
     require(new[FOCUS.LOG]==log_template,"New log profile differs beyond its exact name")
     known_arn(planned[FOCUS.LOG],"arn",f"arn:aws:logs:{REGION}:{ACCOUNT}:log-group:/aws/lambda/{PREFIX}-ingest")
@@ -147,12 +189,18 @@ def inspect_plan(document,physical,*,image,zip_sha,zip_filename,run_url,wif,root
             and new[FOCUS.POLICY].get("region",REGION)==REGION and FOCUS.policy_exact(new[FOCUS.POLICY]["policy"]),"New ECR policy has extra configuration")
     known_arn(planned[FOCUS.POLICY],"id",FOCUS.REPOSITORY);known_arn(planned[FOCUS.POLICY],"registry_id",ACCOUNT)
     # Every remaining Image setting mirrors the physical API Lambda default.
-    image_template=strip_outputs(physical_values[MODULE+'aws_lambda_function.zip["api"]'],NEW_READONLY[FOCUS.INGEST])
+    image_template=strip_outputs(physical_values[MODULE+'aws_lambda_function.zip["api"]'],new_output_fields(FOCUS.INGEST))
     image_value=new[FOCUS.INGEST]
-    for field in ("filename","handler","runtime","source_code_hash","code_sha256"):
+    for field in ("filename","handler","runtime"):
         require(image_value.get(field) in (None,""),"Image Lambda includes ZIP/code-hash configuration")
         if field in image_value:image_template[field]=image_value[field]
         else:image_template.pop(field,None)
+    for field in ("description","kms_key_arn","source_kms_key_arn","code_signing_config_arn"):
+        require(image_template.get(field)=="" and image_value.get(field) in (None,""),"Image optional empty setting differs: "+field)
+        if field in image_value:image_template[field]=image_value[field]
+        else:image_template.pop(field,None)
+    require(image_template.get("layers")==[] and image_value.get("layers") in (None,[]),"Image Lambda must have no layers")
+    image_template["layers"]=image_value.get("layers")
     image_template.update(function_name=PREFIX+"-ingest",package_type="Image",image_uri=image,
         timeout=120,memory_size=2048,ephemeral_storage=[{"size":1024}],environment=copy.deepcopy(planned[MODULE+'aws_lambda_function.zip["api"]']["environment"]))
     config=image_value.get("image_config",[])
@@ -162,13 +210,29 @@ def inspect_plan(document,physical,*,image,zip_sha,zip_filename,run_url,wif,root
     logging=image_template.get("logging_config",[])
     require(len(logging)==1 and logging[0].get("log_format")=="Text","Physical Lambda logging profile differs")
     logging[0]["log_group"]="/aws/lambda/"+PREFIX+"-ingest"
+    actual_logging=image_value.get("logging_config",[])
+    require(len(actual_logging)==1,"Image logging must be known and explicit")
+    for field in ("application_log_level","system_log_level"):
+        require(logging[0].get(field)=="" and actual_logging[0].get(field) in (None,""),"Text logging has an unreviewed log level")
+        if field in actual_logging[0]:logging[0][field]=actual_logging[0][field]
+        else:logging[0].pop(field,None)
     require(image_template.get("tracing_config")==[{"mode":"PassThrough"}] and image_template.get("publish") is False
             and not image_template.get("kms_key_arn") and not image_template.get("source_kms_key_arn")
             and not any(image_template.get(k) for k in ("layers","vpc_config","file_system_config","dead_letter_config","snap_start","capacity_provider_config","durable_config","tenancy_config","code_signing_config_arn")),"Physical Lambda security/default profile differs")
     require(image_value==image_template,"Image Lambda differs outside the exact new-function profile")
     known_arn(planned[FOCUS.INGEST],"arn",FOCUS.INGEST_ARN);known_arn(planned[FOCUS.INGEST],"id",PREFIX+"-ingest")
     # Copy the existing disabled inference SQS profile; only its two targets vary.
-    mapping_template=strip_outputs(physical_values[MODULE+'aws_lambda_event_source_mapping.zip_queues["infer"]'],NEW_READONLY[FOCUS.MAPPING])
+    old_mapping=physical_values[MODULE+'aws_lambda_event_source_mapping.zip_queues["infer"]']
+    require(all(field in old_mapping and type(old_mapping[field]) is type(default) and old_mapping[field]==default
+            for field,default in SQS_COMPUTED_DEFAULTS.items()),"Physical SQS stream/Kafka profile differs from reviewed inactive defaults")
+    mapping_template=strip_outputs(old_mapping,new_output_fields(FOCUS.MAPPING))
+    mapping_value=new[FOCUS.MAPPING]
+    for field,default in SQS_UNSET_DEFAULTS.items():
+        require(field in mapping_template and type(mapping_template[field]) is type(default) and mapping_template[field]==default
+                and (mapping_value.get(field) is None or type(mapping_value[field]) is type(default) and mapping_value[field]==default),
+                "New SQS unset spelling differs from the exact existing inactive default: "+field)
+        if field in mapping_value:mapping_template[field]=mapping_value[field]
+        else:mapping_template.pop(field,None)
     mapping_template["function_name"]=FOCUS.INGEST_ARN
     queue_arn=physical_values[MODULE+'aws_sqs_queue.work["ingest"]'].get("arn")
     require(queue_arn==f"arn:aws:sqs:{REGION}:{ACCOUNT}:{PREFIX}-ingest","Physical ingest queue ARN differs")
@@ -176,7 +240,7 @@ def inspect_plan(document,physical,*,image,zip_sha,zip_filename,run_url,wif,root
     require(mapping_template.get("enabled") is False and mapping_template.get("batch_size")==1
             and mapping_template.get("function_response_types")==["ReportBatchItemFailures"]
             and not any(mapping_template.get(k) for k in ("scaling_config","filter_criteria","destination_config","kms_key_arn","provisioned_poller_config","metrics_config","self_managed_event_source","source_access_configuration","amazon_managed_kafka_event_source_config","self_managed_kafka_event_source_config","document_db_event_source_config","topics","queues","starting_position","starting_position_timestamp","tumbling_window_in_seconds")),"Physical SQS profile has unreviewed non-SQS/active settings")
-    require(new[FOCUS.MAPPING]==mapping_template,"New disabled mapping differs outside its exact queue/function targets")
+    require(mapping_value==mapping_template,"New disabled mapping differs outside its exact queue/function targets")
     known_arn(planned[FOCUS.MAPPING],"function_arn",FOCUS.INGEST_ARN)
     require(planned[FOCUS.MAPPING].get("state") in (None,"Disabled"),"New mapping output is not disabled")
     variables=document.get("variables",{})
@@ -187,6 +251,7 @@ def inspect_plan(document,physical,*,image,zip_sha,zip_filename,run_url,wif,root
     return {**focused,"status":"offline-paused-wiring-increment-passed","fullIncrementGatePassed":True,
         "baselineSourceRevision":BASELINE_SOURCE,"zipSHA256":ZIP_SHA,"workerImageUri":image,"inferenceURL":RUN_URL,
         "existingFullValuesCompared":55,"exactEnvironmentUpdates":7,"extraRuntimeIAMLogARNs":1,
+        "newResourceReviewedComputedUnknownPaths":{a:[list(path) for path in unknown_paths(rows[a]["change"].get("after_unknown",{}))] for a in sorted(FOCUS.ADDITIONS)},
         "newECRPolicyStatements":1,"physicalPriorFullyEqual":True,"resourceDriftEntries":0,
         "applyAuthorized":False,"cloudVerified":False,"imageProvenanceVerified":False,"googleRunProvenanceVerified":False,
         "remaining":"Actual SHA-bound physical/plan and live publication/Run/policy-absence evidence are required; an apply needs separate review."}

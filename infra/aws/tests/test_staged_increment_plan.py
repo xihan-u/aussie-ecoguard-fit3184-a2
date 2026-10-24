@@ -43,22 +43,23 @@ def fixture():
                 "application_log_level":"","system_log_level":""}],tracing_config=[{"mode":"PassThrough"}],
             image_config=[],layers=[],vpc_config=[],file_system_config=[],dead_letter_config=[],snap_start=[],
             kms_key_arn="",source_kms_key_arn="",code_signing_config_arn="",last_modified="2026-10-23T00:00:00.000+0000",
-            capacity_provider_config=[],durable_config=[],tenancy_config=[],tags={"Project":"EcoGuard"},tags_all={"Project":"EcoGuard"},
+            capacity_provider_config=[],durable_config=[],tenancy_config=[],tags={},tags_all={"Project":"FIT3184-A2","Application":"AussieEcoGuard","Environment":"personal"},
             skip_destroy=False,region=G.REGION,description="",s3_bucket=None,s3_key=None,s3_object_version=None,
             environment=[{"variables":{"ECO_INFERENCE_URL":"","ECO_GOOGLE_INVOKER_EMAIL":"",
                 "ECO_GOOGLE_CREDENTIALS_FILE":"/var/task/config/google-wif.json","ECO_OTHER":"unchanged"}}])
         old[G.MODULE+f'aws_cloudwatch_log_group.functions["{name}"]'].update(name="/aws/lambda/"+G.PREFIX+"-"+name,
-            retention_in_days=7,skip_destroy=False,log_group_class="STANDARD",kms_key_id=None,name_prefix=None,
-            deletion_protection_enabled=False,tags={"Project":"EcoGuard"},tags_all={"Project":"EcoGuard"},region=G.REGION)
+            retention_in_days=7,skip_destroy=False,log_group_class="STANDARD",kms_key_id="",name_prefix="",
+            deletion_protection_enabled=False,tags={},tags_all={"Project":"FIT3184-A2","Application":"AussieEcoGuard","Environment":"personal"},region=G.REGION)
     for name in ("infer","delete","notify"):
         old[G.MODULE+f'aws_lambda_event_source_mapping.zip_queues["{name}"]'].update(
             function_name=f"arn:aws:lambda:{G.REGION}:{G.ACCOUNT}:function:{G.PREFIX}-{name}",
             event_source_arn=f"arn:aws:sqs:{G.REGION}:{G.ACCOUNT}:{G.PREFIX}-{name}",
             batch_size=1,function_response_types=["ReportBatchItemFailures"],maximum_batching_window_in_seconds=0,
-            filter_criteria=[],destination_config=[],provisioned_poller_config=[],metrics_config=[],kms_key_arn=None,
+            filter_criteria=[],destination_config=[],provisioned_poller_config=[],metrics_config=[],kms_key_arn="",
             topics=[],queues=[],source_access_configuration=[],self_managed_event_source=[],amazon_managed_kafka_event_source_config=[],
             self_managed_kafka_event_source_config=[],document_db_event_source_config=[],tumbling_window_in_seconds=0,
-            starting_position=None,starting_position_timestamp=None,region=G.REGION,tags={},tags_all={})
+            starting_position="",starting_position_timestamp="",bisect_batch_on_function_error=False,
+            maximum_record_age_in_seconds=0,maximum_retry_attempts=0,parallelization_factor=0,region=G.REGION,tags={},tags_all={})
     old[G.MODULE+'aws_sqs_queue.work["ingest"]']["arn"]=f"arn:aws:sqs:{G.REGION}:{G.ACCOUNT}:{G.PREFIX}-ingest"
     planned=copy.deepcopy(prior);future=table(planned)
     for address in G.ZIP_FUNCTIONS:future[address]["environment"][0]["variables"].update(G.ENV_BINDINGS)
@@ -151,15 +152,79 @@ class IncrementTests(unittest.TestCase):
 
     def test_new_security_unknowns_and_unknown_known_contradictions_block(self):
         cases=[(G.FOCUS.INGEST,"logging_config"),(G.FOCUS.INGEST,"tracing_config"),
-            (G.FOCUS.INGEST,"source_code_hash"),(G.FOCUS.INGEST,"image_config"),
+            (G.FOCUS.INGEST,"environment"),(G.FOCUS.INGEST,"image_config"),(G.FOCUS.INGEST,"role"),
+            (G.FOCUS.INGEST,"reserved_concurrent_executions"),(G.FOCUS.INGEST,"layers"),
             (G.FOCUS.MAPPING,"function_name"),(G.FOCUS.MAPPING,"filter_criteria"),
-            (G.FOCUS.LOG,"kms_key_id"),(G.FOCUS.LOG,"name_prefix"),(G.FOCUS.POLICY,"policy")]
+            (G.FOCUS.MAPPING,"event_source_arn"),(G.FOCUS.MAPPING,"enabled"),(G.FOCUS.MAPPING,"scaling_config"),
+            (G.FOCUS.MAPPING,"starting_position"),(G.FOCUS.MAPPING,"topics"),(G.FOCUS.MAPPING,"queues"),
+            (G.FOCUS.LOG,"kms_key_id"),(G.FOCUS.LOG,"deletion_protection_enabled"),
+            (G.FOCUS.LOG,"log_group_class"),(G.FOCUS.LOG,"tags"),(G.FOCUS.POLICY,"policy")]
         for address,field in cases:
             with self.subTest(address=address,field=field):
                 doc,physical=fixture();change(doc,address)["after_unknown"]={field:True};mutate(doc,address,lambda v:v.update({field:None}));self.rejected(doc,physical)
         doc,physical=fixture();change(doc,G.FOCUS.INGEST)["after_unknown"]={"arn":True}
         mutate(doc,G.FOCUS.INGEST,lambda v:v.update(arn=None));review(doc,physical)
         mutate(doc,G.FOCUS.INGEST,lambda v:v.update(arn="arn:wrong"));self.rejected(doc,physical)
+
+    def test_actual_new_resource_unknown_catalog_and_exact_unset_spellings_pass(self):
+        # Actual provider6.67 plan catalog, after HCL makes log protection/class,
+        # Lambda logging/tracing and tags known. No blanket computed wildcard.
+        catalog={G.FOCUS.LOG:{"arn","id","name_prefix"},G.FOCUS.POLICY:{"id","registry_id"},
+            G.FOCUS.INGEST:{"arn","id","code_sha256","source_code_hash","invoke_arn","last_modified",
+                "qualified_arn","qualified_invoke_arn","response_streaming_invoke_arn","signing_job_arn",
+                "signing_profile_version_arn","source_code_size","version"},
+            G.FOCUS.MAPPING:{"arn","id","function_arn","last_modified","last_processing_result","state",
+                "state_transition_reason","uuid","amazon_managed_kafka_event_source_config",
+                "self_managed_kafka_event_source_config","maximum_record_age_in_seconds","maximum_retry_attempts","parallelization_factor"}}
+        doc,physical=fixture()
+        for address,fields in catalog.items():
+            change(doc,address)["after_unknown"]={field:True for field in fields}
+            mutate(doc,address,lambda v,fields=fields:v.update({field:None for field in fields}))
+        mutate(doc,G.FOCUS.LOG,lambda v:v.update(kms_key_id=None))
+        def unset_image(value):
+            value.update({field:None for field in ("description","kms_key_arn","source_kms_key_arn","code_signing_config_arn","layers")})
+            value["logging_config"][0].update(application_log_level=None,system_log_level=None)
+            value["image_config"][0].update(entry_point=None,working_directory=None)
+        mutate(doc,G.FOCUS.INGEST,unset_image)
+        mutate(doc,G.FOCUS.MAPPING,lambda v:v.update({field:None for field in ("bisect_batch_on_function_error","kms_key_arn","queues","topics","starting_position","starting_position_timestamp","tumbling_window_in_seconds")}))
+        report=review(doc,physical)
+        self.assertEqual((report["creates"],report["updates"],report["noops"]),(4,8,47))
+        self.assertEqual({address:{tuple(path) for path in paths} for address,paths in report["newResourceReviewedComputedUnknownPaths"].items()},
+            {address:{(field,) for field in fields} for address,fields in catalog.items()})
+        self.assertFalse(report["applyAuthorized"])
+
+    def test_projected_outputs_require_exact_image_and_disabled_sqs_context(self):
+        cases=[(G.FOCUS.LOG,"name_prefix","arbitrary-"),(G.FOCUS.INGEST,"code_sha256","unreviewed-hash"),
+            (G.FOCUS.INGEST,"source_code_hash","unreviewed-hash"),(G.FOCUS.INGEST,"filename","other.zip"),
+            (G.FOCUS.INGEST,"package_type","Zip"),(G.FOCUS.MAPPING,"event_source_arn","arn:aws:kinesis:us-east-1:011154879765:stream/other"),
+            (G.FOCUS.MAPPING,"enabled",True),(G.FOCUS.MAPPING,"maximum_retry_attempts",1),
+            (G.FOCUS.MAPPING,"parallelization_factor",False),
+            (G.FOCUS.MAPPING,"amazon_managed_kafka_event_source_config",[{"consumer_group_id":"other"}]),
+            (G.FOCUS.MAPPING,"queues",["not-sqs"]),(G.FOCUS.MAPPING,"starting_position","LATEST"),
+            (G.FOCUS.INGEST,"description","different"),(G.FOCUS.INGEST,"layers",["arn:extra"])]
+        for address,field,value in cases:
+            with self.subTest(address=address,field=field):
+                doc,physical=fixture();mutate(doc,address,lambda v:v.update({field:value}));self.rejected(doc,physical)
+        for address,field in ((G.FOCUS.LOG,"name_prefix"),(G.FOCUS.INGEST,"code_sha256"),(G.FOCUS.MAPPING,"maximum_retry_attempts")):
+            with self.subTest(address=address,contradiction=field):
+                doc,physical=fixture();change(doc,address)["after_unknown"]={field:True}
+                # Unknown outputs cannot also carry the old known default.
+                mutate(doc,address,lambda v:v.update({field:"" if address!=G.FOCUS.MAPPING else 0}));self.rejected(doc,physical)
+        doc,physical=fixture();address=G.FOCUS.MAPPING
+        change(doc,address)["after_unknown"]={"amazon_managed_kafka_event_source_config":[{"consumer_group_id":True}]}
+        mutate(doc,address,lambda v:v.update(amazon_managed_kafka_event_source_config=[{"consumer_group_id":None}]))
+        self.rejected(doc,physical)
+        doc,physical=fixture();address=G.MODULE+'aws_lambda_function.zip["api"]'
+        change(doc,address)["after_unknown"]={"source_code_hash":True}
+        mutate(doc,address,lambda v:v.update(source_code_hash=None));self.rejected(doc,physical)
+
+    def test_sqs_output_projection_still_requires_exact_old_inactive_profile(self):
+        doc,physical=fixture();address=G.MODULE+'aws_lambda_event_source_mapping.zip_queues["infer"]'
+        for value in (G.values(physical)[address],table(doc["prior_state"]["values"])[address],table(doc["planned_values"])[address],change(doc,address)["before"],change(doc,address)["after"]):
+            value["maximum_retry_attempts"]=7
+        change(doc,G.FOCUS.MAPPING)["after_unknown"]={"maximum_retry_attempts":True}
+        mutate(doc,G.FOCUS.MAPPING,lambda v:v.update(maximum_retry_attempts=None))
+        self.rejected(doc,physical)
 
     def test_every_new_profile_target_and_security_configuration_is_exact(self):
         cases=[(G.FOCUS.INGEST,lambda v:v.update(kms_key_arn="arn:extra")),
