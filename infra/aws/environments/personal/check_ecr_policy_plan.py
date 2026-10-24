@@ -71,7 +71,8 @@ def at(value,path):
     return value
 
 
-def inspect_plan(document,image):
+def inspect_plan(document,image,*,root_inventory_while_paused=False):
+    require(type(root_inventory_while_paused) is bool,"Root inventory review opt-in must be an explicit boolean")
     require(IMAGE_PATTERN.fullmatch(image),"Exact personal immutable ingest manifest URI required")
     prior=managed(document["prior_state"]["values"]["root_module"])
     planned=managed(document["planned_values"]["root_module"])
@@ -81,6 +82,19 @@ def inspect_plan(document,image):
         document["prior_state"]["values"]["root_module"],document["planned_values"]["root_module"])
         for r in BASE.resources(root) if r.get("mode")=="data" and r.get("type")=="aws_caller_identity"]
     require(identities and set(identities)=={ACCOUNT},"Expected personal account identity is missing/different")
+    if root_inventory_while_paused:
+        expression=document.get("configuration",{}).get("root_module",{}).get("module_calls",{}).get("ecoguard",{}).get("expressions",{}).get("allow_root_bucket_inventory_while_paused")
+        require(isinstance(expression,dict) and set(expression)=={"constant_value"}
+                and expression["constant_value"] is True,"Root inventory requires the exact constant-true module input")
+        caller_rows=[r for root in (document["prior_state"]["values"]["root_module"],document["planned_values"]["root_module"])
+            for r in BASE.resources(root) if r.get("mode")=="data" and r.get("type")=="aws_caller_identity"]
+        require(all(r.get("values",{}).get("arn")==f"arn:aws:iam::{ACCOUNT}:root" for r in caller_rows),
+                "Root inventory review requires the exact account-root caller")
+        caller_addresses={r["address"] for r in caller_rows}
+        caller_changes=[r.get("change",{}) for r in document.get("resource_changes",[]) if r.get("address") in caller_addresses]
+        require(all(not has_unknown(c.get("after_unknown",{})) and isinstance(c.get("after"),dict)
+            and c["after"].get("account_id")==ACCOUNT and c["after"].get("arn")==f"arn:aws:iam::{ACCOUNT}:root"
+            for c in caller_changes),"Root caller identity is unknown/inconsistent")
     require(document.get("complete") is True and document.get("errored") is not True
             and not document.get("resource_drift") and not document.get("deferred_changes"),"Drift/incomplete/deferred plan")
     changes=[r for r in document.get("resource_changes",[]) if r.get("mode")=="managed"]
@@ -132,19 +146,23 @@ def inspect_plan(document,image):
     signup=planned[MODULE+"aws_cognito_user_pool.users"].get("admin_create_user_config",[])
     require(len(signup)==1 and signup[0].get("allow_admin_create_user_only") is True,"Public signup is active")
     require(all(planned[MODULE+f'aws_cloudwatch_event_rule.maintenance["{name}"]'].get("state")=="DISABLED" for name in ("outbox","cleanup")),"A maintenance schedule is active")
-    bucket_checks=[];BASE.inspect_bucket_security(lambda suffix:planned.get(MODULE+suffix,{}),lambda name,passed:bucket_checks.append((name,bool(passed))))
+    bucket_checks=[];BASE.inspect_bucket_security(lambda suffix:planned.get(MODULE+suffix,{}),lambda name,passed:bucket_checks.append((name,bool(passed))),
+        root_inventory_while_paused=root_inventory_while_paused)
     require(all(passed for _,passed in bucket_checks),"Bucket pause/privacy boundary differs")
     require(not any("aws_s3_bucket_notification." in address for address in planned),"Upload destinations are managed/active")
     return {"status":"focused-ecr-policy-paused-profile-passed","projectAccount":ACCOUNT,"region":REGION,
         "priorManagedResources":55,"managedResources":59,"creates":4,"updates":8,"noops":47,
         "policyPrincipal":"lambda.amazonaws.com","sourceFunctionArn":INGEST_ARN,"repositoryArn":REPOSITORY_ARN,
-        "allFunctionsReservedZero":True,"applicationInvoked":False,"fullIncrementGatePassed":False,"applyAuthorized":False,"cloudVerified":False,
+        "allFunctionsReservedZero":True,"rootInventoryWhilePausedReviewed":root_inventory_while_paused,
+        "applicationInvoked":False,"fullIncrementGatePassed":False,"applyAuthorized":False,"cloudVerified":False,
         "remaining":"Complete existing-state value/security/provenance/refresh gate and real Terraform/provider plan are still required."}
 
 
 def main():
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument("--plan-json",required=True,type=Path);parser.add_argument("--image",required=True);args=parser.parse_args()
-    try:report=inspect_plan(json.loads(args.plan_json.read_text()),args.image)
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument("--plan-json",required=True,type=Path);parser.add_argument("--image",required=True)
+    parser.add_argument("--root-inventory-while-paused",action="store_true",help="Review only the explicitly configured, exact-root listing exception")
+    args=parser.parse_args()
+    try:report=inspect_plan(json.loads(args.plan_json.read_text()),args.image,root_inventory_while_paused=args.root_inventory_while_paused)
     except (ValueError,KeyError,TypeError,OSError) as error:
         print(json.dumps({"status":"blocked","applyAuthorized":False,"reason":str(error)}));return 1
     print(json.dumps(report,indent=2));return 0

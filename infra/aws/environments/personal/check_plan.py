@@ -109,7 +109,36 @@ def cors_is_scoped(blocks, origin_key, method_key, methods):
             and exact_strings(blocks[0].get(method_key), methods))
 
 
-def inspect_bucket_security(values, check):
+def root_inventory_policy_is_scoped(policy):
+    """Accept only the approved root listing exception and its two AWS forms."""
+    bucket = f"arn:aws:s3:::{BUCKET}"
+    targets = [bucket, bucket + "/*"]
+    expected = {"Version": "2012-10-17", "Statement": [
+        {"Sid": "DenyInsecureTransport", "Effect": "Deny", "Principal": "*", "Action": "s3:*",
+         "Resource": targets, "Condition": {"Bool": {"aws:SecureTransport": "false"}}},
+        {"Sid": "DenyDataAccessWhileRuntimePaused", "Effect": "Deny", "Principal": "*",
+         "Action": ["s3:GetObject*", "s3:PutObject*", "s3:DeleteObject*", "s3:RestoreObject",
+                    "s3:AbortMultipartUpload", "s3:ListMultipartUploadParts", "s3:ListBucketVersions",
+                    "s3:ListBucketMultipartUploads"], "Resource": targets},
+        {"Sid": "DenyBucketListingWhileRuntimePaused", "Effect": "Deny", "Principal": "*",
+         "Action": ["s3:ListBucket"], "Resource": [bucket],
+         "Condition": {"ArnNotEquals": {"aws:PrincipalArn": f"arn:aws:iam::{ACCOUNT}:root"}}}]}
+    if not isinstance(policy, dict) or not isinstance(policy.get("Statement"), list) or len(policy["Statement"]) != 3:
+        return False
+    listing = policy["Statement"][2]
+    if (not isinstance(listing, dict) or listing.get("Action") not in ("s3:ListBucket", ["s3:ListBucket"])
+            or listing.get("Resource") not in (bucket, [bucket])):
+        return False
+    # No general policy normalization: retain every key, condition, target and
+    # ordered value, changing only these two observed singleton representations.
+    normalized = {**policy, "Statement": [*policy["Statement"][:2],
+        {**listing, "Action": ["s3:ListBucket"], "Resource": [bucket]}]}
+    return normalized == expected
+
+
+def inspect_bucket_security(values, check, *, root_inventory_while_paused=False):
+    if type(root_inventory_while_paused) is not bool:
+        raise ValueError("Root inventory review opt-in must be an explicit boolean")
     bucket = values("aws_s3_bucket.media[0]")
     check("owned_personal_bucket_retained", bucket.get("bucket") == BUCKET and bucket.get("force_destroy") is False)
     ownership = values("aws_s3_bucket_ownership_controls.media[0]")
@@ -130,9 +159,11 @@ def inspect_bucket_security(values, check):
 
     policy = json.loads(values("aws_s3_bucket_policy.media_tls").get("policy", "{}"))
     statements = policy.get("Statement", [])
+    expected_sids = {"DenyInsecureTransport", "DenyDataAccessWhileRuntimePaused"}
+    if root_inventory_while_paused:
+        expected_sids.add("DenyBucketListingWhileRuntimePaused")
     check("only_reviewed_bucket_policy_statements", policy.get("Version") == "2012-10-17"
-          and len(statements) == 2 and {s.get("Sid") for s in statements}
-          == {"DenyInsecureTransport", "DenyDataAccessWhileRuntimePaused"})
+          and len(statements) == len(expected_sids) and {s.get("Sid") for s in statements} == expected_sids)
     targets = {f"arn:aws:s3:::{BUCKET}", f"arn:aws:s3:::{BUCKET}/*"}
     tls = [s for s in statements if s.get("Sid") == "DenyInsecureTransport"]
     check("bucket_requires_tls", len(tls) == 1 and tls[0].get("Effect") == "Deny" and tls[0].get("Principal") == "*"
@@ -141,9 +172,13 @@ def inspect_bucket_security(values, check):
     pause = [s for s in statements if s.get("Sid") == "DenyDataAccessWhileRuntimePaused"]
     required_s3_actions = {"s3:GetObject*", "s3:PutObject*", "s3:DeleteObject*", "s3:RestoreObject", "s3:AbortMultipartUpload",
                            "s3:ListMultipartUploadParts", "s3:ListBucket", "s3:ListBucketVersions", "s3:ListBucketMultipartUploads"}
+    if root_inventory_while_paused:
+        required_s3_actions.remove("s3:ListBucket")
     check("bucket_data_paused", len(pause) == 1 and pause[0].get("Effect") == "Deny" and pause[0].get("Principal") == "*"
           and not pause[0].get("Condition") and set(pause[0].get("Action", [])) == required_s3_actions
           and set(pause[0].get("Resource", [])) == targets)
+    if root_inventory_while_paused:
+        check("only_exact_root_bucket_inventory_exception", root_inventory_policy_is_scoped(policy))
 
 
 def inspect_plan(document):

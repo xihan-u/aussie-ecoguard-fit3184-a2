@@ -99,7 +99,8 @@ def known_arn(value,key,expected):
     require(value.get(key) in (None,expected),"New output identity differs: "+key)
 
 
-def inspect_plan(document,physical,*,image,zip_sha,zip_filename,run_url,wif):
+def inspect_plan(document,physical,*,image,zip_sha,zip_filename,run_url,wif,root_inventory_while_paused=False):
+    require(type(root_inventory_while_paused) is bool,"Root inventory review opt-in must be an explicit boolean")
     require(zip_sha==ZIP_SHA and isinstance(zip_filename,str) and zip_filename.startswith("/") and zip_filename.endswith(".zip"),"Reviewed ZIP SHA/absolute filename differs")
     require(run_url==RUN_URL,"Run origin differs from the explicitly verified private service")
     BASE.WIF.validate_personal_wif(wif)
@@ -109,7 +110,7 @@ def inspect_plan(document,physical,*,image,zip_sha,zip_filename,run_url,wif):
     physical_values=values(physical)
     require(len(physical_values)==55 and set(physical_values)==BASE.expected_addresses() and prior==physical_values,
             "Refreshed prior differs from the full physical55 checkpoint; no refresh bypass permitted")
-    focused=FOCUS.inspect_plan(document,image)
+    focused=FOCUS.inspect_plan(document,image,root_inventory_while_paused=root_inventory_while_paused)
     planned=FOCUS.managed(document["planned_values"]["root_module"])
     rows={r["address"]:r for r in document["resource_changes"] if r.get("mode")=="managed"}
     code_hash=base64.b64encode(bytes.fromhex(ZIP_SHA)).decode("ascii")
@@ -195,9 +196,11 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     for name in ("physical-json","plan-json","wif"):parser.add_argument("--"+name,required=True,type=Path)
     for name in ("image","zip-sha256","zip-filename","run-url"):parser.add_argument("--"+name,required=True)
+    parser.add_argument("--root-inventory-while-paused",action="store_true",help="Review only the explicitly configured, exact-root listing exception")
     args=parser.parse_args()
     try:report=inspect_plan(json.loads(args.plan_json.read_text()),json.loads(args.physical_json.read_text()),image=args.image,
-        zip_sha=args.zip_sha256,zip_filename=args.zip_filename,run_url=args.run_url,wif=BASE.WIF.parse_personal_wif(args.wif.read_bytes()))
+        zip_sha=args.zip_sha256,zip_filename=args.zip_filename,run_url=args.run_url,wif=BASE.WIF.parse_personal_wif(args.wif.read_bytes()),
+        root_inventory_while_paused=args.root_inventory_while_paused)
     except (OSError,ValueError,KeyError,TypeError) as error:
         print(json.dumps({"status":"blocked","applyAuthorized":False,"reason":str(error)}));return 1
     print(json.dumps(report,indent=2));return 0
