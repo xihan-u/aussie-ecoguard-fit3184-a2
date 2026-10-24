@@ -84,10 +84,21 @@ For local integration only, use `SERVICE_AUTH_MODE=local` and a random
 `K_SERVICE` is present. It still verifies real Cognito JWTs. Never commit that
 local secret. There is no default bypass or mock inference mode.
 
-Cloud Run validates the Google ID token in `X-Serverless-Authorization`, including
-audience and service invoker permission. The platform strips the signature after
-verification; the app does not pretend to reverify that stripped token. The
-`Authorization` header on `/v1/query-authorizations` carries the independent
+`SERVICE_AUTH_MODE=cloud-run` is a trusted adapter for a **private Cloud Run IAM
+endpoint only**. Require platform IAM authentication (`invoker_iam_disabled=false`),
+retain the exact reviewed service invoker policy with no `allUsers` or
+`allAuthenticatedUsers`, and expose no path to the container that bypasses IAM.
+`K_SERVICE` must be present; it selects the platform adapter and is not identity
+proof by itself. Cloud Run validates the Google ID token and invoker permission
+before the request reaches this adapter. The platform can consume or modify
+`X-Serverless-Authorization`, so the app does not require its forwarded presence
+or pretend to reverify a stripped token. A fabricated bearer header was never an
+independent authentication check. Check the actual private IAM configuration as
+part of deployment verification; this adapter is not for a public raw container.
+See Google's [service authentication](https://docs.cloud.google.com/run/docs/authenticating/service-to-service)
+and [header handling](https://docs.cloud.google.com/gemini/enterprise/docs/register-and-manage-an-a2a-agent) documentation.
+
+The `Authorization` header on `/v1/query-authorizations` still carries the independent
 Cognito access token. The app checks its RSA signature, fixed issuer, client_id,
 token_use, expiry, issued-at and subject using Cognito JWKS. This path never
 initializes torch or downloads model weights and has an 8-second deadline.
