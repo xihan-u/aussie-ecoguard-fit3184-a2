@@ -57,6 +57,12 @@ variable "runtime_enabled" {
   description = "Reversible runtime/access pause. Keep deploy_api and all existing resource inputs unchanged; false retains resources and data."
   default     = true
 }
+variable "allow_unreserved_processing_functions" {
+  type        = bool
+  default     = false
+  nullable    = false
+  description = "Narrow low-quota personal automatic-processing opt-in only. Never a general explicit-mode -1 allowance; pause with false and concurrency zero."
+}
 variable "runtime_controls" {
   description = "Optional independent runtime controls. Null preserves historical runtime_enabled behavior; explicit controls require runtime_enabled=false. Omitted functions remain paused."
   type = object({
@@ -70,6 +76,24 @@ variable "runtime_controls" {
   })
   default = null
   validation {
+    condition = !var.allow_unreserved_processing_functions ? true : try(
+      var.region == "us-east-1" && var.prefix == "ecoguard3184" && var.environment == "personal" &&
+      length(var.allowed_account_ids) == 1 && contains(var.allowed_account_ids, "011154879765") &&
+      var.manage_execution_role && var.execution_role_arn == "" && var.manage_media_bucket && var.deploy_api &&
+      !var.runtime_enabled && var.manage_upload_notifications == true && var.manage_ingest_ecr_pull_policy &&
+      var.allow_root_bucket_inventory_while_paused &&
+      can(regex("^011154879765[.]dkr[.]ecr[.]us-east-1[.]amazonaws[.]com/ecoguard3184-personal-worker@sha256:[0-9a-f]{64}$", var.worker_image)) &&
+      var.inference_url == "https://ecoguard-inference-adlnb7yumq-uc.a.run.app" &&
+      var.google_invoker_email == "ecoguard-aws-invoker@ecoguard-fit3184-a2-2026.iam.gserviceaccount.com" &&
+      var.runtime_controls.function_concurrency == tomap({ ingest = -1, infer = -1, outbox = -1 }) &&
+      var.runtime_controls.media_data_enabled && !var.runtime_controls.api_endpoint_enabled &&
+      !var.runtime_controls.public_signup_enabled && var.runtime_controls.upload_notifications_enabled &&
+      var.runtime_controls.queue_consumers == toset(["ingest", "infer"]) &&
+      var.runtime_controls.schedules == toset(["outbox"]), false
+    )
+    error_message = "Unreserved opt-in is only for the exact personal three-function automatic profile, own image/role/bucket, two capped consumers and outbox schedule; all public/other entries must stay off."
+  }
+  validation {
     condition     = var.runtime_controls == null ? true : !var.runtime_enabled
     error_message = "Explicit runtime_controls require runtime_enabled=false."
   }
@@ -77,9 +101,11 @@ variable "runtime_controls" {
     condition = var.runtime_controls == null ? true : alltrue([
       for name, concurrency in var.runtime_controls.function_concurrency :
       contains(["api", "ingest", "infer", "delete", "notify", "outbox", "cleanup", "lex_fulfillment"], name) &&
-      try(concurrency >= 0 && floor(concurrency) == concurrency, false)
+      try(floor(concurrency) == concurrency && (
+        concurrency >= 0 || (var.allow_unreserved_processing_functions && concurrency == -1 && contains(["ingest", "infer", "outbox"], name))
+      ), false)
     ])
-    error_message = "Function names must be known and reserved concurrency must be a nonnegative integer; explicit mode never accepts -1."
+    error_message = "Function names must be known and reserved concurrency nonnegative integers, except the separately validated exact personal three-function unreserved profile."
   }
   validation {
     condition = var.runtime_controls == null ? true : alltrue([
@@ -92,18 +118,20 @@ variable "runtime_controls" {
     condition = var.runtime_controls == null ? true : alltrue([
       for name in var.runtime_controls.queue_consumers :
       contains(["ingest", "infer", "delete", "notify"], name) && var.deploy_api &&
-      try(lookup(var.runtime_controls.function_concurrency, name, 0) >= 2, false) &&
+      try(lookup(var.runtime_controls.function_concurrency, name, 0) >= 2 ||
+      (var.allow_unreserved_processing_functions && contains(["ingest", "infer"], name) && lookup(var.runtime_controls.function_concurrency, name, 0) == -1), false) &&
       (!contains(["ingest", "infer"], name) || (var.worker_image != "" && var.inference_url != "" && var.google_invoker_email != ""))
     ])
-    error_message = "Enabled queue consumers must be deployed, known, ready, and reserved at least the mapping cap of two."
+    error_message = "Enabled consumers require ready deployed functions and reservation at least two, except exact personal ingest/infer unreserved opt-in; mapping caps remain two."
   }
   validation {
     condition = var.runtime_controls == null ? true : alltrue([
       for name in var.runtime_controls.schedules :
       contains(["outbox", "cleanup"], name) && var.deploy_api &&
-      try(lookup(var.runtime_controls.function_concurrency, name, 0) >= 1, false)
+      try(lookup(var.runtime_controls.function_concurrency, name, 0) >= 1 ||
+      (var.allow_unreserved_processing_functions && name == "outbox" && lookup(var.runtime_controls.function_concurrency, name, 0) == -1), false)
     ])
-    error_message = "Enabled schedules require a known deployed target with positive reserved concurrency."
+    error_message = "Enabled schedules require positive reserved concurrency, except the exact opted-in personal unreserved outbox target."
   }
   validation {
     condition = var.runtime_controls == null ? true : (

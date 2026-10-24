@@ -173,9 +173,12 @@ resource "aws_s3_bucket_notification" "uploads" {
   dynamic "queue" {
     for_each = local.upload_notifications_enabled ? [true] : []
     content {
+      # Explicit controlled-runtime ID; preserve the legacy provider-generated ID.
+      id            = local.controlled_runtime ? "${local.name}-incoming-ingest" : null
       queue_arn     = aws_sqs_queue.work["ingest"].arn
       events        = ["s3:ObjectCreated:*"]
       filter_prefix = "incoming/"
+      filter_suffix = local.controlled_runtime ? "" : null
     }
   }
   depends_on = [aws_sqs_queue_policy.s3_ingest, aws_lambda_event_source_mapping.ingest]

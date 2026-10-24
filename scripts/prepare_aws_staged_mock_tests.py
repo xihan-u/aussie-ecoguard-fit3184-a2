@@ -23,7 +23,9 @@ FIXTURES = (
 SUITES = (
     "infra/aws/tests/runtime_controls.tftest.hcl",
     "infra/aws/tests/ecr_pull_policy.tftest.hcl",
+    "infra/aws/tests/low_quota_processing.tftest.hcl",
     "infra/aws/environments/personal/tests/stages.tftest.hcl",
+    "infra/aws/environments/personal/tests/processing_bounded.tftest.hcl",
 )
 
 

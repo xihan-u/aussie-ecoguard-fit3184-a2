@@ -1,8 +1,11 @@
 # Personal AWS paused environment
 
-**Prepared staged-runtime implementation; AWS wiring not yet planned or applied.**
-It defines four fixed `deployment_stage` profiles. The existing 55-resource
-foundation remains paused. The default is `foundation-paused`; every profile
+**Paused AWS wiring deployed; automatic processing has not been activated.**
+The [actual 59-resource deployment and independent pause audit](../../../../docs/c-aws-wiring-deployed-paused-20261024.md)
+passed at 07:45:33 UTC on 24 October. Source changes here do not activate it.
+This root defines five fixed `deployment_stage` profiles, including a separately
+reviewed bounded processing candidate. The historical first-create foundation
+had 55 resources. The default is `foundation-paused`; every profile
 keeps `runtime_enabled=false`. Read [the controls, tests and release
 conditions](STAGED-RUNTIME-DRAFT.md) before any stage transition.
 The implementation adds the narrowly scoped ECR retrieval policy and an offline
@@ -254,3 +257,74 @@ After deployment is separately authorized, do not use the course-specific
 it intentionally checks the old account and prefix. Prepare a reviewed personal
 restore/verification procedure before activation. Pausing retains storage and
 does not by itself guarantee a zero bill.
+
+
+## Bounded automatic-processing candidate
+
+`processing-bounded` is a source candidate, not an applied stage or a timer.
+The separately reviewed low-quota implementation preserves the earlier positive
+reservation proposals as historical records. It requires `adopt_upload_notifications=true` and uses
+Terraform `reserved_concurrent_executions=-1` for ingest, infer and outbox:
+these three functions use the shared account's unreserved pool. It creates no
+per-function reservation and **does not cap outbox at one**. Only the exact
+personal processing profile may opt into this shared-module exception; the
+exception defaults false, legacy null controls are unchanged, and other five
+functions remain reserved at zero. It enables only the ingest/infer SQS mappings (maximum concurrency 2)
+and the one-minute outbox schedule, and restores private media data access.
+Every other function remains at zero. API endpoint, public signup, Lex,
+notify/delete consumers and cleanup schedule remain off; `runtime_enabled`
+remains false. This changes access and starts processing, so the paused wiring
+approval does not authorize it.
+
+Notification adoption defaults false. Only one Terraform owner may manage this
+bucket notification. First adoption adds one resource with only the ingest
+queue, `s3:ObjectCreated:*` and exact `incoming/` prefix. After adoption, retain
+`adopt_upload_notifications=true` and pause with `wiring-paused`: the resource
+remains managed with no queue/topic/Lambda destinations. Returning to foundation
+or turning adoption false would remove managed resources and is rejected by the
+new activation/pause gate. The historical 55-to-59 gate remains unchanged.
+
+`check_processing_plan.py` is a pure offline gate for exactly first activation
+59-to-60 (expected 1 create / 7 updates / 52 no-ops) and adopted pause 60-to-60
+(expected 0 creates / 8 updates / 52 no-ops). These counts and provider spellings
+have **not** been validated against a real processing plan. Physical/prior
+must each retain exactly the four-field root caller data row; planned data and
+nonmanaged change rows must be exactly absent. This spelling is a strict
+candidate constraint inferred from the separate repair plan, not processing-native
+proof. A different actual processing spelling must stop for review. It requires a full
+physical export identical to the refreshed prior, compares all existing values,
+and accepts only the named concurrency/mapping/schedule/policy/notification
+edits. It never applies, reads credentials or grants activation approval. The
+caller must independently SHA-pin raw state, its exact provider export and the
+saved binary plan. A passing pure fixture is not a cloud plan or runtime proof.
+
+Activation also requires a separately frozen **actual** read-only quota and
+complete account-function-inventory receipt, SHA-pinned by a reviewed outer
+binder. `LIVE_QUOTA_EVIDENCE_SHA256` is deliberately `None`; the default CLI
+cannot review activation using supplied or synthetic quota JSON. The future
+receipt must show own account/region, exact quota/unreserved capacity 10/10,
+exactly all eight expected functions, complete pagination and UTC age at most
+five minutes. The earlier seven-function observation predates the ingest creation
+and cannot satisfy this fresh eight-function prerequisite.
+The unit fixtures are explicitly synthetic and never live evidence. Pausing does
+not require fresh quota/inventory: a capacity change must not block reservation
+zero, disabled consumers/schedule, empty notification or approved policy restore.
+Successful SDK concurrency `{}` means unreserved only after a successful read;
+access denial or missing-function errors never do.
+
+Before actual activation, separately review source/tool/backend pins, current
+private Run/WIF/image/ZIP provenance, credits/service eligibility, the exact one
+fixture and all project queue/DLQ/outbox/table backlog. Agree a maximum window
+(at most 600 seconds for this gate), a monitored stop deadline and a reviewed
+pause plan/controller plus emergency pause procedure; the stage does not
+self-expire. Pause immediately if verification or funding becomes blocked.
+No fixture upload is authorized by this source candidate. Any input license,
+DynamoDB seed and production deletion of incoming data need explicit review.
+
+A successful UPLOAD inference creates a NOTIFY outbox event. Outbox may dispatch
+it to the notify queue while its consumer stays disabled; record and isolate
+that retained item after pause rather than enabling notification delivery.
+Prove the actual S3 event -> ingest -> outbox -> infer -> role/WIF -> private
+Run -> result-database chain and verify the paused controls afterwards. A direct
+infer/manual invocation is only a diagnostic milestone and cannot establish
+complete automatic processing, Cognito/API/Oracle/Lex or all assignment acceptance.

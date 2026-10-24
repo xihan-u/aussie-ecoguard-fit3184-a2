@@ -1,5 +1,9 @@
 # Paused wiring repair: actual saved-plan review
 
+Historical pre-apply review, recorded at 04:38 UTC. Its one permitted apply has
+since completed; see the [actual paused deployment and independent verification](c-aws-wiring-deployed-paused-20261024.md).
+The old review and its selected JSON remain historical evidence, not a new execution permission.
+
 The new saved repair plan has passed independent read-only review against the actual 56-resource AWS checkpoint. It proposes **3 creates, 0 updates, 56 no-ops and 0 deletes**. No repair apply, application invocation, media upload or processing activation has occurred. The previous wiring apply failed once and its single-attempt authorization is consumed.
 
 Account: `011154879765`; region: `us-east-1`; state-owning source: `3d2b3e7d64e43bfe0808f94ce06ed693be4ef268`. The current physical state remains serial72, SHA256 `ad411dc4f52a7f510cc19518ff9e60f25948999dccb8b8d363a6ed19da401f95`.

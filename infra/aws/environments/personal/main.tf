@@ -24,12 +24,26 @@ variable "lambda_zip" {
 
 variable "deployment_stage" {
   type        = string
-  description = "Reviewed manual stage only. After wiring, return to wiring-paused, never foundation-paused: foundation would remove ingest resources."
+  description = "Reviewed fixed stage. processing-bounded needs separate activation review and a bounded pause controller. After wiring/adoption, pause with wiring-paused and retain adoption."
   default     = "foundation-paused"
   nullable    = false
   validation {
-    condition     = contains(["foundation-paused", "wiring-paused", "auth-smoke", "media-manual"], var.deployment_stage)
-    error_message = "Choose foundation-paused, wiring-paused, auth-smoke or media-manual."
+    condition     = contains(["foundation-paused", "wiring-paused", "auth-smoke", "media-manual", "processing-bounded"], var.deployment_stage)
+    error_message = "Choose foundation-paused, wiring-paused, auth-smoke, media-manual or processing-bounded."
+  }
+}
+
+# Once created, keep this true when pausing: empty destinations, not destruction.
+variable "adopt_upload_notifications" {
+  type        = bool
+  description = "Explicit sole-bucket notification ownership. Default false; processing requires true. Once adopted, retain true with wiring-paused."
+  default     = false
+  nullable    = false
+  validation {
+    condition = var.deployment_stage == "processing-bounded" ? var.adopt_upload_notifications : !(
+      var.adopt_upload_notifications && var.deployment_stage == "foundation-paused"
+    )
+    error_message = "Processing requires notification adoption; an adopted environment must pause with wiring-paused, never foundation-paused."
   }
 }
 
@@ -62,19 +76,20 @@ variable "inference_url" {
 
 locals {
   stage_reservations = {
-    foundation-paused = {}
-    wiring-paused     = {}
-    auth-smoke        = { api = 1 }
-    media-manual      = { api = 1, ingest = 1, infer = 1, outbox = 1, delete = 1, cleanup = 1 }
+    foundation-paused  = {}
+    wiring-paused      = {}
+    auth-smoke         = { api = 1 }
+    media-manual       = { api = 1, ingest = 1, infer = 1, outbox = 1, delete = 1, cleanup = 1 }
+    processing-bounded = { ingest = -1, infer = -1, outbox = -1 }
   }
   runtime_controls = {
     function_concurrency         = lookup(local.stage_reservations, var.deployment_stage, {})
-    media_data_enabled           = var.deployment_stage == "media-manual"
+    media_data_enabled           = contains(["media-manual", "processing-bounded"], var.deployment_stage)
     api_endpoint_enabled         = false
     public_signup_enabled        = false
-    queue_consumers              = []
-    schedules                    = []
-    upload_notifications_enabled = false
+    queue_consumers              = var.deployment_stage == "processing-bounded" ? ["ingest", "infer"] : []
+    schedules                    = var.deployment_stage == "processing-bounded" ? ["outbox"] : []
+    upload_notifications_enabled = var.deployment_stage == "processing-bounded"
   }
 }
 
@@ -84,18 +99,19 @@ locals {
 module "ecoguard" {
   source = "../.."
 
-  allowed_account_ids         = ["011154879765"]
-  region                      = "us-east-1"
-  prefix                      = "ecoguard3184"
-  environment                 = "personal"
-  manage_media_bucket         = true
-  manage_execution_role       = true
-  execution_role_arn          = ""
-  deploy_api                  = true
-  runtime_enabled             = false
-  runtime_controls            = local.runtime_controls
-  manage_upload_notifications = false
-  lambda_zip                  = var.lambda_zip
+  allowed_account_ids                   = ["011154879765"]
+  region                                = "us-east-1"
+  prefix                                = "ecoguard3184"
+  environment                           = "personal"
+  manage_media_bucket                   = true
+  manage_execution_role                 = true
+  execution_role_arn                    = ""
+  deploy_api                            = true
+  runtime_enabled                       = false
+  runtime_controls                      = local.runtime_controls
+  allow_unreserved_processing_functions = var.deployment_stage == "processing-bounded"
+  manage_upload_notifications           = var.adopt_upload_notifications
+  lambda_zip                            = var.lambda_zip
 
   model_manifest_version        = "ecoguard-models-2026-10-08-v3"
   frontend_origins              = ["http://localhost:5173", "http://127.0.0.1:5173"]
