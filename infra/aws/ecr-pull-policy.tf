@@ -11,7 +11,6 @@ resource "aws_ecr_repository_policy" "lambda_ingest" {
       Effect    = "Allow"
       Principal = { Service = "lambda.amazonaws.com" }
       Action    = ["ecr:BatchGetImage", "ecr:GetDownloadUrlForLayer"]
-      Resource  = "arn:aws:ecr:${var.region}:${local.runtime_account}:repository/${aws_ecr_repository.worker.name}"
       Condition = {
         ArnEquals    = { "aws:SourceArn" = "arn:aws:lambda:${var.region}:${local.runtime_account}:function:${local.name}-ingest" }
         StringEquals = { "aws:SourceAccount" = local.runtime_account }
