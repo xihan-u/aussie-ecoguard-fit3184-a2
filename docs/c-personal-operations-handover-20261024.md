@@ -2,6 +2,11 @@
 
 The current route uses AWS for storage, queues, identity and application functions, and Google Cloud Run for private model inference. These are two cloud providers; the older Oracle-host instructions describe a separate deployment route. This handover identifies the current environment and separates deployed configuration from application acceptance.
 
+The [later read-only integration checkpoint](c-readonly-integration-checkpoint-20261024.md)
+records the source47 transition, reviewed native processing plan and successful
+11:42 UTC AWS collection. The historical next-operation descriptions below must
+not be interpreted as current runtime approval; actual media processing remains pending.
+
 ```mermaid
 flowchart LR
   User[Team web client] -. pending HTTPS/Cognito acceptance .-> API[AWS API and functions]

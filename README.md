@@ -5,6 +5,10 @@
 
 ## 最新交付与运行状态
 
+**C 部分个人环境最新记录（2026-10-24）：** AWS 已部署并暂停59项资源；GCP私有推理环境13项资源。
+完整 AWS 只读检查和 GCP 41项元数据检查已通过，真实跨云图片处理及暂停恢复验证仍待完成。
+详见[最新核验与剩余事项](docs/c-readonly-integration-checkpoint-20261024.md)。下面的核心交接测试记录来自10月8日。
+
 **核心实现已完成本轮交接；云端运行和访问已暂停，数据与配置保留。**
 AWS 的定时任务、队列处理、七个 Lambda 和 API 已停用；媒体桶也拒绝包括旧签名链接在内的数据读写。
 `infra/aws/deployment.auto.tfvars` 持久保存 `runtime_enabled=false`，普通 plan 不会默默恢复运行。
@@ -92,8 +96,9 @@ Grounding DINO 提供候选框，SigLIP2 在同一裁剪上统一比较物种，
 | 云 | 当前项目状态 |
 |---|---|
 | AWS 课程账号 `360493183467` / `default` / us-east-1 | Cognito、私有 S3、5 张按请求计费 DynamoDB 表、4 个 SQS 工作队列及 DLQ、ECR、7 个 Lambda、HTTP API 保留；运行和访问暂停 |
-| AWS 个人账号 `011154879765` / `ecoguard-personal` | Toolkit/MCP 已验证；Sydney/us-east-1 无 Lex Bot；当前项目无新部署 |
+| AWS 个人账号 `011154879765` / `ecoguard-personal` | us-east-1个人环境59项资源已部署并暂停；实际跨云图片处理尚未验证，见[最新记录](docs/c-readonly-integration-checkpoint-20261024.md) |
 | Google `ecoguard-fit3184-jlii0474` | IAM/WIF 身份接线，账单未绑定，无计算部署 |
+| Google `ecoguard-fit3184-a2-2026` | 个人验证环境13项资源，私有Cloud Run及模型warmup已验证；实际Lambda角色调用尚未验证 |
 | Oracle | 既有服务器部署模板已准备；当前未找到可用主机，未部署应用 |
 
 课程 API `https://i4zicvj5s2.execute-api.us-east-1.amazonaws.com/api/v1` 当前关闭。
