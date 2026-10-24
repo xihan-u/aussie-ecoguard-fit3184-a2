@@ -106,6 +106,9 @@ module "ecoguard" {
   google_invoker_email          = var.deployment_stage == "foundation-paused" ? "" : "ecoguard-aws-invoker@ecoguard-fit3184-a2-2026.iam.gserviceaccount.com"
   lex_bot_id                    = ""
   lex_alias_id                  = ""
+
+  # Prepared access change only: requires review/approval before deployment.
+  allow_root_bucket_inventory_while_paused = true
 }
 
 output "deployment_identity" {

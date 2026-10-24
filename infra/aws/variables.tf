@@ -15,6 +15,12 @@ variable "manage_media_bucket" {
   description = "Opt in to a new Terraform-managed media bucket and BucketOwnerEnforced ownership. False preserves the course's externally bootstrapped bucket."
   default     = false
 }
+variable "allow_root_bucket_inventory_while_paused" {
+  type        = bool
+  nullable    = false
+  description = "Opt in to exempt only this account's root user from the paused s3:ListBucket deny, for HeadBucket refresh and object-name inventory. Object access, version listing and multipart listing remain denied."
+  default     = false
+}
 variable "frontend_origins" {
   type    = list(string)
   default = ["http://localhost:5173", "http://127.0.0.1:5173"]

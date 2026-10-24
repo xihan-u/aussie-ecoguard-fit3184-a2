@@ -66,12 +66,24 @@ resource "aws_s3_bucket_policy" "media_tls" {
       Sid       = "DenyDataAccessWhileRuntimePaused"
       Effect    = "Deny"
       Principal = "*"
-      Action = [
+      Action = concat([
         "s3:GetObject*", "s3:PutObject*", "s3:DeleteObject*", "s3:RestoreObject",
-        "s3:AbortMultipartUpload", "s3:ListMultipartUploadParts",
-        "s3:ListBucket", "s3:ListBucketVersions", "s3:ListBucketMultipartUploads"
-      ]
+        "s3:AbortMultipartUpload", "s3:ListMultipartUploadParts"
+        ], var.allow_root_bucket_inventory_while_paused ? [] : ["s3:ListBucket"], [
+        "s3:ListBucketVersions", "s3:ListBucketMultipartUploads"
+      ])
       Resource = [local.bucket_arn, "${local.bucket_arn}/*"]
+      }], local.media_data_enabled || !var.allow_root_bucket_inventory_while_paused ? [] : [{
+      # HeadBucket uses ListBucket permission. This exact-root exception also
+      # permits object-name inventory, while every object operation stays denied.
+      Sid       = "DenyBucketListingWhileRuntimePaused"
+      Effect    = "Deny"
+      Principal = "*"
+      Action    = ["s3:ListBucket"]
+      Resource  = [local.bucket_arn]
+      Condition = {
+        ArnNotEquals = { "aws:PrincipalArn" = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root" }
+      }
     }])
   })
 }
