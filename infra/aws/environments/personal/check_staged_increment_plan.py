@@ -132,6 +132,18 @@ def new_known_values(address,change,planned,image):
     return strip_outputs(planned,fields)
 
 
+def match_new_empty_tags(template,value,address):
+    """Only these three creations may spell the existing empty tags as null."""
+    require(address in {FOCUS.LOG,FOCUS.INGEST,FOCUS.MAPPING},"Empty-tag representation is not reviewed for this resource")
+    require("tags" in template and type(template["tags"]) is dict and template["tags"]=={},
+            "Physical template tags must be a present typed empty map")
+    require("tags" in value and (value["tags"] is None or type(value["tags"]) is dict and value["tags"]=={}),
+            "New known tags must be present null or a typed empty map")
+    # Preserve the actual new representation in the template. New change.after
+    # must still equal planned values; no old55 or tags_all values are projected.
+    template["tags"]=copy.deepcopy(value["tags"])
+
+
 def known_arn(value,key,expected):
     require(value.get(key) in (None,expected),"New output identity differs: "+key)
 
@@ -181,6 +193,7 @@ def inspect_plan(document,physical,*,image,zip_sha,zip_filename,run_url,wif,root
             and log_template.get("log_group_class")=="STANDARD","Physical log profile is not the reviewed safe default")
     require(log_template.get("kms_key_id") in (None,"") and new[FOCUS.LOG].get("kms_key_id") in (None,""),"Log must have no KMS override")
     log_template["kms_key_id"]=new[FOCUS.LOG].get("kms_key_id")
+    match_new_empty_tags(log_template,new[FOCUS.LOG],FOCUS.LOG)
     log_template["name"]="/aws/lambda/"+PREFIX+"-ingest"
     require(new[FOCUS.LOG]==log_template,"New log profile differs beyond its exact name")
     known_arn(planned[FOCUS.LOG],"arn",f"arn:aws:logs:{REGION}:{ACCOUNT}:log-group:/aws/lambda/{PREFIX}-ingest")
@@ -191,6 +204,7 @@ def inspect_plan(document,physical,*,image,zip_sha,zip_filename,run_url,wif,root
     # Every remaining Image setting mirrors the physical API Lambda default.
     image_template=strip_outputs(physical_values[MODULE+'aws_lambda_function.zip["api"]'],new_output_fields(FOCUS.INGEST))
     image_value=new[FOCUS.INGEST]
+    match_new_empty_tags(image_template,image_value,FOCUS.INGEST)
     for field in ("filename","handler","runtime"):
         require(image_value.get(field) in (None,""),"Image Lambda includes ZIP/code-hash configuration")
         if field in image_value:image_template[field]=image_value[field]
@@ -227,6 +241,7 @@ def inspect_plan(document,physical,*,image,zip_sha,zip_filename,run_url,wif,root
             for field,default in SQS_COMPUTED_DEFAULTS.items()),"Physical SQS stream/Kafka profile differs from reviewed inactive defaults")
     mapping_template=strip_outputs(old_mapping,new_output_fields(FOCUS.MAPPING))
     mapping_value=new[FOCUS.MAPPING]
+    match_new_empty_tags(mapping_template,mapping_value,FOCUS.MAPPING)
     for field,default in SQS_UNSET_DEFAULTS.items():
         require(field in mapping_template and type(mapping_template[field]) is type(default) and mapping_template[field]==default
                 and (mapping_value.get(field) is None or type(mapping_value[field]) is type(default) and mapping_value[field]==default),

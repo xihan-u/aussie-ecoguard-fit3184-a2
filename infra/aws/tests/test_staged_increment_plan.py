@@ -193,6 +193,64 @@ class IncrementTests(unittest.TestCase):
             {address:{(field,) for field in fields} for address,fields in catalog.items()})
         self.assertFalse(report["applyAuthorized"])
 
+    def test_only_three_new_tags_accept_the_observed_known_null_or_empty_map(self):
+        for tags in (None,{}):
+            with self.subTest(tags=tags):
+                doc,physical=fixture()
+                for address in (G.FOCUS.LOG,G.FOCUS.INGEST,G.FOCUS.MAPPING):
+                    mutate(doc,address,lambda value:value.update(tags=copy.deepcopy(tags)))
+                report=review(doc,physical)
+                self.assertEqual((report["creates"],report["updates"],report["noops"]),(4,8,47))
+                self.assertFalse(report["applyAuthorized"])
+
+    def test_new_empty_tags_reject_missing_nonempty_wrong_types_and_unknowns(self):
+        for address in (G.FOCUS.LOG,G.FOCUS.INGEST,G.FOCUS.MAPPING):
+            for kind,tags in (("missing",None),("nonempty",{"unexpected":"tag"}),("list",[]),
+                    ("string",""),("bool",False),("number",0),("unknown",None),("nested_unknown",{})):
+                with self.subTest(address=address,kind=kind):
+                    doc,physical=fixture()
+                    mutate(doc,address,lambda value:value.pop("tags",None) if kind=="missing" else value.update(tags=copy.deepcopy(tags)))
+                    if kind=="unknown":change(doc,address)["after_unknown"]={"tags":True}
+                    if kind=="nested_unknown":change(doc,address)["after_unknown"]={"tags":{"hidden":True}}
+                    self.rejected(doc,physical)
+
+    def test_new_tag_change_and_planned_representations_must_still_be_equal(self):
+        for address in (G.FOCUS.LOG,G.FOCUS.INGEST,G.FOCUS.MAPPING):
+            for side in ("change","planned"):
+                with self.subTest(address=address,side=side):
+                    doc,physical=fixture()
+                    if side=="change":change(doc,address)["after"]["tags"]=None
+                    else:table(doc["planned_values"])[address]["tags"]=None
+                    self.rejected(doc,physical)
+
+    def test_new_tag_allowance_requires_original_typed_empty_template(self):
+        profiles=(G.MODULE+'aws_cloudwatch_log_group.functions["api"]',
+            G.MODULE+'aws_lambda_function.zip["api"]',
+            G.MODULE+'aws_lambda_event_source_mapping.zip_queues["infer"]')
+        for address in profiles:
+            for kind,tags in (("missing",None),("null",None),("list",[]),("nonempty",{"existing":"tag"})):
+                with self.subTest(address=address,kind=kind):
+                    doc,physical=fixture()
+                    values=(G.values(physical)[address],table(doc["prior_state"]["values"])[address],
+                        table(doc["planned_values"])[address],change(doc,address)["before"],change(doc,address)["after"])
+                    for value in values:
+                        if kind=="missing":value.pop("tags",None)
+                        else:value["tags"]=copy.deepcopy(tags)
+                    self.rejected(doc,physical)
+
+    def test_old_fifty_five_tags_and_new_tags_all_remain_exact(self):
+        for address in sorted(G.BASE.expected_addresses()):
+            with self.subTest(existing=address):
+                doc,physical=fixture();mutate(doc,address,lambda value:value.update(tags=None));self.rejected(doc,physical)
+        for address in (G.FOCUS.LOG,G.FOCUS.INGEST,G.FOCUS.MAPPING):
+            with self.subTest(tags_all=address):
+                doc,physical=fixture();mutate(doc,address,lambda value:value.update(tags=None,tags_all=None));self.rejected(doc,physical)
+
+    def test_ecr_policy_does_not_inherit_empty_tags_allowance(self):
+        for tags in (None,{}):
+            with self.subTest(tags=tags):
+                doc,physical=fixture();mutate(doc,G.FOCUS.POLICY,lambda value:value.update(tags=copy.deepcopy(tags)));self.rejected(doc,physical)
+
     def test_projected_outputs_require_exact_image_and_disabled_sqs_context(self):
         cases=[(G.FOCUS.LOG,"name_prefix","arbitrary-"),(G.FOCUS.INGEST,"code_sha256","unreviewed-hash"),
             (G.FOCUS.INGEST,"source_code_hash","unreviewed-hash"),(G.FOCUS.INGEST,"filename","other.zip"),
