@@ -215,12 +215,16 @@ def main():
     def repository():return m.cloud("artifacts","repositories","describe","ecoguard","--location="+REGION,"--project="+PROJECT)
     before_repo=repository()
     require(before_repo.get("name")==f"projects/{PROJECT}/locations/{REGION}/repositories/ecoguard" and before_repo.get("format")=="DOCKER"
-            and before_repo.get("mode")=="STANDARD_REPOSITORY" and before_repo.get("labels",{})=={}
+            and before_repo.get("mode")=="STANDARD_REPOSITORY" and before_repo.get("labels")=={"goog-terraform-provisioned":"true"}
             and not before_repo.get("remoteRepositoryConfig") and not before_repo.get("virtualRepositoryConfig"),"Existing private repository differs")
+    observed=BASE/"image2-publication-preflight-observation-20261024-1/repository-private.json"
+    require(observed.is_file() and not observed.is_symlink()
+            and sha(observed)=="2db97ca7c0e7908207fabb0b0378981f2b868bddb8f7e23d12012daf0e8a0943"
+            and before_repo==local(observed),"Exact retained preflight repository observation differs")
     tags=read([CRANE,"ls",IMAGE]).splitlines()
     require(OLD_TAG in tags and NEW_TAG not in tags and len(tags)==len(set(tags))
             and read([CRANE,"digest",IMAGE+":"+OLD_TAG])==OLD_DIGEST,"Old image/tag missing or new target already exists")
-    hashes={p:sha(p) for p in evidence|{FROZEN_HTTP,CRANE,CLIENT/"config.json",FUNDING,EXPORT}}
+    hashes={p:sha(p) for p in evidence|{FROZEN_HTTP,CRANE,CLIENT/"config.json",FUNDING,EXPORT,observed}}
     def stable():
         require(source_exact() and sha(STATE)==STATE_SHA and all(p.is_file() and not p.is_symlink() and sha(p)==v for p,v in hashes.items()),"Source/state/historical evidence changed")
         require(m.private_policies()==detail["iamAfter"] and identities()==detail["identityAfter"] and service_iam()==detail["run"]["servicePolicy"]

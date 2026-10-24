@@ -1,5 +1,7 @@
 # Deployment and verification
 
+> **24 October personal-account route:** The operational sections below describe the earlier course/Oracle route. The current member-C deployment uses personal AWS account `011154879765 / us-east-1` and Google Cloud project `ecoguard-fit3184-a2-2026 / us-central1`. Use the [personal C handover](c-personal-operations-handover-20261024.md) and the timestamped deployment records for that environment.
+
 This runbook follows the four-person implementation plan: C owns infrastructure,
 identity and deployment, A owns core/model logic, B owns UI and client auth, and D
 owns Lex/notifications. The user's extra personal spending limit is A$0. Use only
