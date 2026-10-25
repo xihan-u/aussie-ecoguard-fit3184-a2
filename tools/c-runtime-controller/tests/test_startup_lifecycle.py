@@ -119,6 +119,20 @@ class Harness:
         assert all(t.joined and t.next is None for t in self.clock.threads)
         assert self.activation_calls==0 and self.spawn_calls==1
 
+def ast_fingerprint(node):
+    # Python 3.14 ast.dump omits optional empty fields; retain all real structure.
+    def canonical(value):
+        if isinstance(value, ast.AST):
+            return [type(value).__name__, [[name, canonical(item)] for name, item in ast.iter_fields(value)
+                                          if (item is not None and item != []) or (isinstance(value, ast.Constant) and name == 'value')]]
+        if isinstance(value, list):
+            return [canonical(item) for item in value]
+        if isinstance(value, bytes):
+            return ['bytes-literal', value.hex()]
+        return value
+    return hashlib.sha256(json.dumps(canonical(node), separators=(',', ':'), allow_nan=False).encode()).hexdigest()
+
+
 class StartupLifecycleTests(unittest.TestCase):
     def test_healthy_initialization_longer_than_five_seconds(self):
         h=Harness(spawn_delay=7,ack_after=12,objects_delay=15);h.run()
@@ -172,12 +186,15 @@ class StartupLifecycleTests(unittest.TestCase):
         # Packaging-only port: frozen hashes/ASTs replace a sibling work directory.
         baseline=json.loads((HERE/'tests/fixtures/v12-static-baseline.json').read_text())
         for name,expected in baseline['dependencySHA256'].items():
+            if name=='fixture_runtime.py':
+                # Checkpoint51 independently reviewed Head-only JSON fix.
+                expected=json.loads((HERE/'tests/fixtures/fixture-runtime-before-json-error-fix.json').read_text())['reviewedFixtureJSONFixSHA256']
             self.assertEqual(hashlib.sha256((HERE/name).read_bytes()).hexdigest(),expected,name)
-        after={node.name:hashlib.sha256(ast.dump(node).encode()).hexdigest()
+        after={node.name:ast_fingerprint(node)
             for node in ast.parse((HERE/'controller_driver.py').read_text()).body
             if isinstance(node,(ast.FunctionDef,ast.ClassDef))}
-        self.assertTrue(set(baseline['functionASTSHA256']).issubset(after))
-        changed={name for name,expected in baseline['functionASTSHA256'].items()
+        self.assertTrue(set(baseline['canonicalFunctionASTSHA256']).issubset(after))
+        changed={name for name,expected in baseline['canonicalFunctionASTSHA256'].items()
             if after[name]!=expected}
         self.assertEqual(changed,{'run_mode'})
         self.assertFalse(driver.ARM_REVIEWED);self.assertIsNone(driver.ACTIVATION_PREPARER_SHA256)

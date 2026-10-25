@@ -2,7 +2,7 @@
   "recordType": "selected-nonsecret-member-C-runtime-status",
   "date": "2026-10-25",
   "scope": "personal AWS+GCP deployment; not whole-team acceptance",
-  "preparedForPrivateCheckpoint": 50,
+  "preparedForPrivateCheckpoint": 51,
   "cloudActionsPerformedByThisRecord": false,
   "currentDeployedResourceCounts": {
     "AWS": 60,
@@ -11,10 +11,13 @@
   "actualSuccessfulMediaImages": 0,
   "automaticLambdaWIFModelSuccessVerified": false,
   "currentAWSNativeState": {
-    "serial": 85,
-    "sha256": "7b4d5aed8ce5fd253fceac940637c67554ec0dadea61ca5a352e44a03b455204",
-    "unchangedByAttempt2": true,
-    "newRawStateBodyInAttempt2Archive": false
+    "serial": 94,
+    "sha256": "7bbb39cbcd34963f8c7c9c7fcc6c723b638fa8d04af51b3e7dfa2650029f1e2c",
+    "managedResources": 60,
+    "postAttempt3RawFileLocallyHashVerified": true,
+    "savedOutputsDescribeActivePlanNotCurrentAPIControls": true,
+    "declarativeConvergenceVerified": false,
+    "old85StateMayBeRestoredOverCurrentState": false
   },
   "attempt1": {
     "savedPlanAppliedOnce": true,
@@ -69,7 +72,13 @@
       "liveExactNonceProcessCount": 0,
       "signalsInvoked": false
     },
-    "forensicStartupFinding": "One initial writer heartbeat; first watchdog ACK at T0+5.915597s after the five-second wait. Startup race is strongly consistent with timing, but the generic log does not prove the exact failed assertion."
+    "forensicStartupFinding": "One initial writer heartbeat; first watchdog ACK at T0+5.915597s after the five-second wait. Startup race is strongly consistent with timing, but the generic log does not prove the exact failed assertion.",
+    "nativeStateObserved": {
+      "serial": 85,
+      "sha256": "7b4d5aed8ce5fd253fceac940637c67554ec0dadea61ca5a352e44a03b455204",
+      "unchangedByAttempt2": true,
+      "newRawStateBodyInAttempt2Archive": false
+    }
   },
   "V13LocalCandidate": {
     "status": "nine-injected-stub-tests-and-upstream-independent-static-review-PASS",
@@ -84,13 +93,13 @@
     "cloudReleaseIncluded": false,
     "cloudAcceptanceClaimed": false,
     "repositorySnapshot": "tools/c-runtime-controller/SNAPSHOT.json",
-    "packagingOnlyTestPort": "module location plus frozen V12 dependency/function-AST baseline",
+    "packagingOnlyTestPort": "portable optional-empty-field AST representation and a separately pinned Head JSON fixture dependency; historical V12 ast.dump hashes retained",
     "packagedTests": {
       "commandFromSnapshotDirectory": "python3 -B -m unittest discover -s tests -v",
-      "passed": 9,
+      "passed": 17,
       "failed": 0,
       "exitCode": 0,
-      "claim": "offline deterministic stubs only"
+      "claim": "9 lifecycle and8 Head JSON fixture transport tests; offline deterministic stubs only"
     }
   },
   "GCP12": {
@@ -171,14 +180,151 @@
       "localWorkReference": "work/c-personal/c-resume-gcp12-originals-20261025-1.tar.gz",
       "sha256": "604c51f3226f605dd911cdc7d3e6ae4edc99550c9664dd8de0019488651fbe0e",
       "rawFileIncludedInGit": false
+    },
+    {
+      "kind": "attempt3-activation-result",
+      "sha256": "d4535797e7a1ee316f5ff779c4358dabf6c5af6542c421d8de961a3bf86265b6",
+      "rawFileIncludedInGit": false
+    },
+    {
+      "kind": "attempt3-initial-pause",
+      "sha256": "0e03a9254789571ee83afcec5d48fc8b9bb0c200bec2610f33119dea41a0bce5",
+      "rawFileIncludedInGit": false
+    },
+    {
+      "kind": "attempt3-final-drain",
+      "sha256": "278ede24fd0f7bf17dc10062705daa3213543d1362defefeb3fad6efb542390d",
+      "rawFileIncludedInGit": false
+    },
+    {
+      "kind": "attempt3-final-fallback",
+      "sha256": "76a98bf91373f1a3ce00772faef0821a261bd9850677bce970b1a3c2b23ca690",
+      "rawFileIncludedInGit": false
+    },
+    {
+      "kind": "attempt3-final-originals-archive",
+      "sha256": "ea0215caae07f1d6dd8695ca5d5c047f00304b6860ffe36493510c865c988cd1",
+      "payloadFiles": 1952,
+      "rawFileIncludedInGit": false
     }
   ],
   "remainingAcceptance": [
-    "fresh-bound new controller/plan and concrete new single-use authority",
+    "post-apply serial94/state-to-paused-API reconciliation and separately reviewed new controller/plan/authority; consumed94c never replayed",
     "one actual automatic AWS-role WIF/image/model READY chain",
     "active-work pause and fixture-specific continuous drain plus Terraform convergence",
     "joint final-origin CORS/TLS and auth/isolation evidence; cloud video cadence with A/D",
     "honest final report and private team/staff repository access; assessment-week funding/availability"
   ],
-  "recordPreparedBeforeCommit": true
+  "recordPreparedBeforeCommit": true,
+  "attempt3": {
+    "newSingleImageApprovalObtained": true,
+    "approvalConsumed": true,
+    "savedPlanSHA256": "94c62df2f06a545e8c1d7c48ed1ce18b8c96e19109fc36c777ae29878c494ebc",
+    "savedPlanAppliedOnce": true,
+    "savedPlanExitCode": 0,
+    "activeVerified": true,
+    "savedPlanConsumed": true,
+    "stopReason": "verification",
+    "fixtureOutcomes": {
+      "total": 54,
+      "DynamoDBScan": 45,
+      "SQSAttributes": 8,
+      "sourceHeadObject": 1,
+      "headExitCode": 254,
+      "headAbsenceVerified": false,
+      "sourceHeadRequestSHA256": "55c85e003948eb36a4c5b2fef40e0a17e284e9329143559c54c64b8364763a4c",
+      "seedOrSourcePutIntents": 0,
+      "externalFixtureWriteIntents": 0,
+      "seedOrSourcePutCalls": 0,
+      "historicalStderrRetained": false,
+      "historicalHTTPStatusKnown": false,
+      "countsScope": "complete final1952-file archive including later drain scans",
+      "interim959FileArchiveCounts": {
+        "total": 19,
+        "DynamoDBScan": 10,
+        "SQSAttributes": 8,
+        "sourceHeadObject": 1
+      }
+    },
+    "imageOrFixtureSubmitted": false,
+    "initialAllEightPauseOffsetSeconds": 262.01894530000027,
+    "initialPauseDeadlineMissed": false,
+    "inputClosed": true,
+    "writerQuiesced": true,
+    "drain": {
+      "status": "drain-not-proven",
+      "observations": 10,
+      "observedTailSeconds": 547.9887940669996,
+      "requiredTailSeconds": 540,
+      "continuousSafeObservations": false,
+      "watchdogIndependentlyRemainedThroughTail": false,
+      "supervisionTimingGaps": [],
+      "failedReadRounds": [
+        5,
+        10
+      ],
+      "unverifiedS3CLIReads": 11,
+      "fixtureSpecificConditionsSatisfied": false,
+      "applicationDrained": false,
+      "allTenQuotaRawProfilesMatch10_10_8": true,
+      "GCPIdleProved": false,
+      "inFlightCancellationProved": false,
+      "terraformConverged": false,
+      "limitation": "Unseeded fixture conditions and failed S3 control reads are distinct failures. An elapsed548s/no timing-gap list does not establish continuous safety.",
+      "allProducerTablesEmptyInCompleteSnapshots": true,
+      "completeProducerSnapshots": 8,
+      "unverifiedProducerRounds": [
+        5,
+        10
+      ]
+    },
+    "finalFallback": {
+      "status": "emergency-controls-paused",
+      "allEightFinalReadbacksVerified": true,
+      "boundariesVerified": true,
+      "newMutationAttempts": 0,
+      "deadlineMissed": true,
+      "limitation": "Later repeat readback occurred after T0+600; initial pause was already verified on time. Neither rewrites the failed continuous tail."
+    },
+    "formatCompatibilityFinding": {
+      "officialPinnedCLI2381SyntheticFormatterReproductionPassed": true,
+      "legacyAlsoAddsAwsErrorPrefix": true,
+      "historicalFailureProvedToBe404": false,
+      "currentFixCloudTested": false
+    },
+    "finalDurableIntentCount": 34
+  },
+  "fixtureJSONErrorFix": {
+    "sourceSHA256": "8aa156b52a5a0979a08544d770809d7e069dc1d82aba8f283118cc566329ccf1",
+    "onlyHeadObjectArgvAdds": [
+      "--cli-error-format",
+      "json"
+    ],
+    "exactErrorObject": {
+      "Code": "404",
+      "Message": "Not Found"
+    },
+    "directHTTPMetadataClaimed": false,
+    "strictEmptyStdout": true,
+    "maximumErrorBodyBytes": 16384,
+    "success200AndAllOtherCallArgumentsUnchanged": true,
+    "requestAndOnceAndAllExistingGuardsUnchanged": true,
+    "failedOutputLogging": "fixed category/type/length/SHA only; no raw error or environment bodies",
+    "portableInjectedTestsPassed": 8,
+    "noCLIOrSDKOrThreadOrProcessOrCloudInTests": true,
+    "repoDriverArmReviewed": false,
+    "repoActualPinsPending": 60,
+    "packagedTestsTotalPassed": 17
+  },
+  "GCP13": {
+    "status": "actual-native-metadata-result-downloaded-and-hash-verified",
+    "observedAtUtc": "2026-10-25T08:01:43.040569+00:00",
+    "metadataReadsPassed": 41,
+    "HTTPInferenceRequests": 0,
+    "readerSourceSHA256": "d007bac0532ed7faecc8e4e99dec30c6a1a2c1c48e72ce39235f499affa74fda",
+    "nativeObservationSHA256": "53e8efcc85e2da885c4c442a430a0f9bdffbed3a29e1dac1f2ceebfdebae3def",
+    "nativeResultSummarySHA256": "0ae234a0f6cc5236457d6091d63b76d8fde348efd67fef0fdf4e4297ca80c01c",
+    "nativePayloadFilesIndividuallyVerified": 92,
+    "creditsFreshnessEstablishedByReader": false
+  }
 }

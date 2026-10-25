@@ -1,5 +1,7 @@
 # Member C personal deployment handover (24 October 2026)
 
+Latest status: [the 25 October attempt record](c-runtime-attempt-and-recovery-20261025.md) supersedes the historical state/count examples below. Attempt3 applied94c once, paused all eight controls on time, then failed its continuous observation tail; media/WIF success remains0. Current saved raw state is serial94/60 instances and is not yet reconciled to the live API pause. Checkpoint51 changes only inert source/tests/documentation, not cloud source47 or the frozen V14 runtime.
+
 The current route uses AWS for storage, queues, identity and application functions, and Google Cloud Run for private model inference. These are two cloud providers; the older Oracle-host instructions describe a separate deployment route. This handover identifies the current environment and separates deployed configuration from application acceptance.
 
 The [later read-only integration checkpoint](c-readonly-integration-checkpoint-20261024.md)

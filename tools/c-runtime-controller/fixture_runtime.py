@@ -140,6 +140,30 @@ def gcp_fresh(spec,context,*,now=None,required_until=None):
     return True
 
 
+def verified_head_json_absence(returncode,stdout,stderr):
+    """Only the fixed HeadObject service error; never infer absence from exit254."""
+    if type(returncode) is not int or returncode!=254 or type(stdout) is not bytes or stdout!=b'':
+        return False,'head-error-exit-or-stdout-mismatch'
+    if type(stderr) is not bytes or not 0<len(stderr)<=16384:
+        return False,'head-error-body-type-or-bound'
+    def unique(pairs):
+        result={}
+        for key,value in pairs:
+            if key in result:raise ValueError('Duplicate error JSON key')
+            result[key]=value
+        return result
+    def reject_constant(value):raise ValueError('Nonfinite error JSON value')
+    try:
+        error=json.loads(stderr.decode('utf-8'),object_pairs_hook=unique,parse_constant=reject_constant)
+    except (ValueError,UnicodeError):
+        return False,'head-error-not-strict-json'
+    if type(error) is not dict or set(error)!={'Code','Message'} or type(error['Code']) is not str or type(error['Message']) is not str:
+        return False,'head-error-schema-mismatch'
+    if error!={'Code':'404','Message':'Not Found'}:
+        return False,'head-service-error-not-absence'
+    return True,'head-json-404-verified'
+
+
 class FixtureTransport:
     """Callable for the frozen helper Request, with fixed AWS CLI commands only."""
     def __init__(self,helper,core,context,armed,store,proc,tool,env,*,role,before_external_write,freshness_guard,
@@ -216,6 +240,7 @@ class FixtureTransport:
         argv=[self.tool['path'],service,operation,'--cli-input-json',json.dumps(params,separators=(',',':'),allow_nan=False),
           '--region',REGION,'--output','json','--no-cli-pager','--no-cli-auto-prompt','--no-paginate',
           '--cli-connect-timeout',str(max(1,math.ceil(remaining))),'--cli-read-timeout',str(max(1,math.ceil(remaining)))]
+        if request.operation=='HeadObject':argv+=['--cli-error-format','json']
         if phase=='source-put':
             sample=Path(self.ctx['samplePath'])
             require(sample.is_file() and not any(p.is_symlink() for p in (sample,*sample.parents)) and sha(sample)==self.h.SAMPLE_SHA,'Frozen fixture file changed')
@@ -224,12 +249,16 @@ class FixtureTransport:
             outfile=self.store.path/('fixture-response-'+uuid.uuid4().hex+'.bin')
             fd=os.open(outfile,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600);os.close(fd);argv.append(str(outfile))
         outcome={'service':service,'operation':operation,'requestSHA256':fingerprint,'phase':phase,'startedMonotonic':self.now(),'outerCallMaximum':1,'AWS_MAX_ATTEMPTS':1,'automaticRetry':False}
+        result=None;diagnostic='fixture-command-did-not-return'
         try:
             result=self.run(argv,env=self.env,stdin=subprocess.DEVNULL,capture_output=True,timeout=remaining,shell=False)
             outcome['exitCode']=result.returncode
+            diagnostic='fixture-success-response-unverified'
             if result.returncode:
-                exact404=(request.operation=='HeadObject' and result.returncode==254 and not result.stdout.strip()
-                  and re.fullmatch(rb'\s*An error occurred \(404\) when calling the HeadObject operation: Not Found\s*',result.stderr))
+                diagnostic='fixture-command-nonzero-exit'
+                exact404=False
+                if request.operation=='HeadObject':
+                    exact404,diagnostic=verified_head_json_absence(result.returncode,result.stdout,result.stderr)
                 if exact404:data={'exists':False,'verifiedHTTPStatus':404}
                 else:raise ValueError('Unverified fixture command failure; no retry')
             else:
@@ -248,6 +277,12 @@ class FixtureTransport:
                 require(self.store.write_once(marker,{'requestSHA256':fingerprint,'contextSHA256':self.arm['contextSHA256']}),'Write success confirmation already exists; never resubmit')
             answer={'ok':True,'data':data}
         except Exception as error:
-            outcome['category']='uncertain-or-unverified-fixture-call';outcome['errorType']=type(error).__name__;answer={'ok':False,'category':outcome['category']}
+            outcome['category']='uncertain-or-unverified-fixture-call';outcome['errorType']=type(error).__name__
+            outcome['diagnosticCategory']=diagnostic
+            for channel in ('stdout','stderr'):
+                body=getattr(result,channel,None)
+                outcome[channel+'Bytes']=len(body) if type(body) is bytes else None
+                outcome[channel+'SHA256']=hashlib.sha256(body).hexdigest() if type(body) is bytes else None
+            answer={'ok':False,'category':outcome['category']}
         outcome['endedMonotonic']=self.now();self.store.append_json('fixture-outcome',outcome)
         return answer

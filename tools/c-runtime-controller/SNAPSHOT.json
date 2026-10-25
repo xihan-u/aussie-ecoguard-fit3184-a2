@@ -1,6 +1,6 @@
 {
-  "recordType": "repository-inert-V13-code-snapshot",
-  "sourceVersion": "V13-local-only-startup-lifecycle-candidate",
+  "recordType": "repository-inert-V13-with-reviewed-Head-JSON-fix",
+  "sourceVersion": "V13-lifecycle-plus-Head-JSON-error-fix-local-only",
   "cloudRelease": false,
   "armReviewed": false,
   "actualPinsPendingCount": 60,
@@ -11,15 +11,25 @@
     "inertDriverSHA256": "2af12a878542915f64c7d0bec0b041d4dcc5039aad17fe2d0dfe6b58a409ebef",
     "localNineTestReceiptSHA256": "890cf4e4fbcf0b4f5ebd1cf3276368f09b8079d7de6a98ddf5f8b940a3c1a743",
     "independentStaticReviewSHA256": "84dc9a88b3471c625f9320319953e242c1e81f4b62a9f9b8859ccc5a36044d1f",
-    "originalTestFileSHA256": "6c1c399ae9500fe8ab536c8429bd99052fbe8b780454438d6df86d8194710796"
+    "originalTestFileSHA256": "6c1c399ae9500fe8ab536c8429bd99052fbe8b780454438d6df86d8194710796",
+    "fixtureJSONFixSHA256": "8aa156b52a5a0979a08544d770809d7e069dc1d82aba8f283118cc566329ccf1",
+    "fixtureFixEightInjectedTestReceiptSHA256": "b725a5a583729d3b51edb97393cea18b1a192cfc87a06d74c2ffa15a18b1864b"
   },
   "packaging": {
-    "driverAndRuntimeModuleBytesChanged": false,
-    "testOnlyPort": "module path and frozen V12 dependency/function-AST baseline replace external sibling directory",
-    "packagedTestFileSHA256": "1621e643ae2df0e2519402abad718fe424e5bad82feea46f12c0c401186e8561",
+    "driverAndRuntimeModuleBytesChanged": true,
+    "testOnlyPort": "self-contained synthetic formatter JSON and synthetic temporary fixture body; canonical AST fingerprints omit only optional empty fields for Python-version portability",
+    "packagedTestFileSHA256": "4105401450156cacfd644d288732dcabb2bcc2510ac58c00bcc6eef5dceabd72",
     "independentReviewOfThisPackagingClaimed": false,
     "referenceHelperOriginalSHA256": "9c7dd4d4772456b5fb62d5385bdde5b5a626f90e0c2d6c37a233eee067c5b966",
-    "referenceHelperRuntimePathSatisfied": false
+    "referenceHelperRuntimePathSatisfied": false,
+    "driverChange": "Only FIXTURE_RUNTIME_SHA256 assignment; ARMFalse/preparerNone, all existing functions unchanged",
+    "runtimeChange": "Only FixtureTransport.__call__ and new pure verified_head_json_absence; every other function/guard AST unchanged",
+    "tests": {
+      "methodsPassed": 17,
+      "fixtureMethods": 8,
+      "startupMethods": 9,
+      "CLIOrSDKOrProcessesOrThreadsOrSignalsOrCloudUsed": false
+    }
   },
   "files": [
     {
@@ -29,8 +39,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 3124,
-      "sha256": "22340317cadce883e2cd6c339840ca3f0126211acf82b072ce40b4c71bf59266"
+      "bytes": 4452,
+      "sha256": "e724b51819f76ab7e5ae0499e686846066d8f5d43b6f0248a3ddc763178ea63e"
     },
     {
       "path": "aws_runtime.py",
@@ -45,7 +55,7 @@
     {
       "path": "controller_driver.py",
       "bytes": 63142,
-      "sha256": "2af12a878542915f64c7d0bec0b041d4dcc5039aad17fe2d0dfe6b58a409ebef"
+      "sha256": "dce2c2beced3dd6fd0d00b01f36b77b07947fa9b1d7fd95a1156e684d2b7c55e"
     },
     {
       "path": "credential_route.py",
@@ -59,8 +69,8 @@
     },
     {
       "path": "fixture_runtime.py",
-      "bytes": 22778,
-      "sha256": "4445d6b36157e90b02af073c78919d95bb40b1578dde5050535a88d178ad108f"
+      "bytes": 24571,
+      "sha256": "8aa156b52a5a0979a08544d770809d7e069dc1d82aba8f283118cc566329ccf1"
     },
     {
       "path": "private_runtime.py",
@@ -93,14 +103,29 @@
       "sha256": "2e93870c98809433f3fdec111ca2c764845b32bdfb5b20f5e85b3423b7a6725b"
     },
     {
+      "path": "tests/fixtures/cli2381-head-error-examples.json",
+      "bytes": 939,
+      "sha256": "2b39eddd3461bd3b0e07e43b2fba4dfddf7deedb6dd9b1b4c5dba0ca86131a2c"
+    },
+    {
+      "path": "tests/fixtures/fixture-runtime-before-json-error-fix.json",
+      "bytes": 1429,
+      "sha256": "42dfabf9a1e56fd34b65a42f9ff4d24d869fd25542d305b56639e8e0cf5c0a79"
+    },
+    {
       "path": "tests/fixtures/v12-static-baseline.json",
-      "bytes": 3736,
-      "sha256": "4474a1c01ade6a543598ca32a06155ae1d9e70e9ad1d93ea2358466edbaf1531"
+      "bytes": 6555,
+      "sha256": "61b0acd5425cbe21a1c6588a137a9690a2ea8ce1756eee38579759063df54bd6"
+    },
+    {
+      "path": "tests/test_fixture_cli_json_error.py",
+      "bytes": 15216,
+      "sha256": "519a005e7efe5ab4c353ea8fc0303573caad8f8da7e69558d8244a2ea47cdfa4"
     },
     {
       "path": "tests/test_startup_lifecycle.py",
-      "bytes": 10896,
-      "sha256": "1621e643ae2df0e2519402abad718fe424e5bad82feea46f12c0c401186e8561"
+      "bytes": 11887,
+      "sha256": "4105401450156cacfd644d288732dcabb2bcc2510ac58c00bcc6eef5dceabd72"
     }
   ]
 }
