@@ -1,0 +1,106 @@
+{
+  "recordType": "repository-inert-V13-code-snapshot",
+  "sourceVersion": "V13-local-only-startup-lifecycle-candidate",
+  "cloudRelease": false,
+  "armReviewed": false,
+  "actualPinsPendingCount": 60,
+  "productOrTerraformChanged": false,
+  "rawPrivateEvidenceIncluded": false,
+  "screenshotsIncluded": false,
+  "upstream": {
+    "inertDriverSHA256": "2af12a878542915f64c7d0bec0b041d4dcc5039aad17fe2d0dfe6b58a409ebef",
+    "localNineTestReceiptSHA256": "890cf4e4fbcf0b4f5ebd1cf3276368f09b8079d7de6a98ddf5f8b940a3c1a743",
+    "independentStaticReviewSHA256": "84dc9a88b3471c625f9320319953e242c1e81f4b62a9f9b8859ccc5a36044d1f",
+    "originalTestFileSHA256": "6c1c399ae9500fe8ab536c8429bd99052fbe8b780454438d6df86d8194710796"
+  },
+  "packaging": {
+    "driverAndRuntimeModuleBytesChanged": false,
+    "testOnlyPort": "module path and frozen V12 dependency/function-AST baseline replace external sibling directory",
+    "packagedTestFileSHA256": "1621e643ae2df0e2519402abad718fe424e5bad82feea46f12c0c401186e8561",
+    "independentReviewOfThisPackagingClaimed": false,
+    "referenceHelperOriginalSHA256": "9c7dd4d4772456b5fb62d5385bdde5b5a626f90e0c2d6c37a233eee067c5b966",
+    "referenceHelperRuntimePathSatisfied": false
+  },
+  "files": [
+    {
+      "path": "BINDING-PENDING.json",
+      "bytes": 4880,
+      "sha256": "ae2a494d789cfdff512f2e51cfb1379ebed992b55097e306ee20072ee97b538b"
+    },
+    {
+      "path": "README.md",
+      "bytes": 3124,
+      "sha256": "22340317cadce883e2cd6c339840ca3f0126211acf82b072ce40b4c71bf59266"
+    },
+    {
+      "path": "aws_runtime.py",
+      "bytes": 44296,
+      "sha256": "6cf85fd42f7d8ac557a213c97569d9202517f2168690cbacc40e0758038bb7f3"
+    },
+    {
+      "path": "bounded_controller_lowquota.py",
+      "bytes": 25593,
+      "sha256": "bb203938157d1fc2a2a8965f4e3e8b29e6c2371496912086b22c279ad06f1af5"
+    },
+    {
+      "path": "controller_driver.py",
+      "bytes": 63142,
+      "sha256": "2af12a878542915f64c7d0bec0b041d4dcc5039aad17fe2d0dfe6b58a409ebef"
+    },
+    {
+      "path": "credential_route.py",
+      "bytes": 5948,
+      "sha256": "eed29e1e0e7cdb8be69fa6fdbb6d697b5e6ce4b9458e4e78bcf4b80e3feee205"
+    },
+    {
+      "path": "drain_session.py",
+      "bytes": 10657,
+      "sha256": "9e7552b16e31a69ba407ef0559a8c9582703e4e5dddf2381f0bb77da4ae45f76"
+    },
+    {
+      "path": "fixture_runtime.py",
+      "bytes": 22778,
+      "sha256": "4445d6b36157e90b02af073c78919d95bb40b1578dde5050535a88d178ad108f"
+    },
+    {
+      "path": "private_runtime.py",
+      "bytes": 29755,
+      "sha256": "77030fe0890b9972287bbcf13ae3f7e95607f220beb484adce764c35db68dd76"
+    },
+    {
+      "path": "processing_adopted60_reviewer.py",
+      "bytes": 13524,
+      "sha256": "4bc2a30348c7ed2f7c66bade91dad9dd8ec34a786bbdeac8e18a918519341997"
+    },
+    {
+      "path": "reference/automatic_fixture_DRAFT.py",
+      "bytes": 22133,
+      "sha256": "9c7dd4d4772456b5fb62d5385bdde5b5a626f90e0c2d6c37a233eee067c5b966"
+    },
+    {
+      "path": "sdk_batch.py",
+      "bytes": 19254,
+      "sha256": "aaedd932c2870fcb3031f1749b5f2e9b72dd4d5abfd47a173eb2dd6d2a78eec0"
+    },
+    {
+      "path": "sdk_worker.py",
+      "bytes": 7963,
+      "sha256": "92647337b7cec2a9a27e57100b6a15e93c488e735a3ee25966110b0b52efcb0d"
+    },
+    {
+      "path": "tests/__init__.py",
+      "bytes": 78,
+      "sha256": "2e93870c98809433f3fdec111ca2c764845b32bdfb5b20f5e85b3423b7a6725b"
+    },
+    {
+      "path": "tests/fixtures/v12-static-baseline.json",
+      "bytes": 3736,
+      "sha256": "4474a1c01ade6a543598ca32a06155ae1d9e70e9ad1d93ea2358466edbaf1531"
+    },
+    {
+      "path": "tests/test_startup_lifecycle.py",
+      "bytes": 10896,
+      "sha256": "1621e643ae2df0e2519402abad718fe424e5bad82feea46f12c0c401186e8561"
+    }
+  ]
+}

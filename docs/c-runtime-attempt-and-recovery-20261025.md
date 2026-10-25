@@ -1,8 +1,8 @@
-# Member C: first bounded runtime attempt and recovery — 25 October 2026
+# Member C: bounded runtime attempts and recovery — 25 October 2026
 
-The first approved runtime attempt applied its saved Terraform plan once, but failed the post-activation checks before any test image or fixture seed was submitted. It is not a successful AWS–GCP media test. The original 600-second pause target was missed. A later operator recovery and independent read-only check established that all eight emergency controls were paused.
+The first approved runtime attempt applied its saved Terraform plan once, but failed the post-activation checks before any test image or fixture seed was submitted. The original 600-second pause target was missed; a later operator recovery and independent read-only check established that all eight emergency controls were paused. The second, separately approved single-image attempt stopped during startup with heartbeat expiry, before activation or fixture writes. Neither is a successful AWS–GCP media test. Successful real images remain **0**.
 
-## Actual results
+## Attempt 1: applied once, failed before media input
 
 | Result | Evidence and limitation |
 |---|---|
@@ -15,11 +15,36 @@ The first approved runtime attempt applied its saved Terraform plan once, but fa
 | Limits | No continuous application-drain proof; Terraform configuration convergence remains unverified. The eventual pause does not establish the original 600-second recovery target. |
 | Later read-only collection | At **03:24:23.566 UTC**, all eight control groups passed, but the SDK boundary worker failed before completion. The attempt was retained without automatic retry, mutations, or media submission. |
 
+## Attempt 2: startup stopped, no activation or image
+
+This attempt had a new, single-use action-time approval. The actual final binder checked all 60 pins, an independent terminal identity check passed, and the fresh SDK backlog check passed before launch. Those preconditions did not establish application success.
+
+| Result | Evidence and limitation |
+|---|---|
+| Startup failure | The watchdog recorded STOP reason `heartbeat`; the writer log recorded only `ValueError`. The exact failed assertion and writer exit timestamp were not recorded. |
+| Activation and input | All 17 durable intents were audited: two child-spawn intents and 15 SDK boundary reads. There was no activation or external activation-call intent and no fixture seed/source-Put intent. Captured AWS outcomes recorded no mutations. The native read-only closeout still observed serial 85 and the same raw-state hash. This attempt did **not** apply the saved plan or submit an image. |
+| Emergency controls | All eight controls read back paused at **T0+68.765734 seconds**. The pause receipt recorded `deadlineMissed=false`, closed input and a quiescent writer. This is distinct from proving application drain. |
+| Continuous observation | The independent watchdog remained for **14 observation rounds / 570.038965 seconds**, covering the required 540-second tail after pause readback. Captured observations had paused controls, valid quota/funding gates, empty complete scans of all five tables, stable table hashes and no supervision timing gaps. These are sampled observations under the recorded plan, not a fresh balance check or proof of zero cost. |
+| Drain acceptance | The final status remains **`drain-not-proven`**. Fixture-specific producer expiry, known-job terminal and unresolved-in-flight conditions were false because this fixture was never seeded. Empty tables do not prove the required fixture terminal/lease contract. No active lease, GCP idle state or cancellation of AWS/GCP in-flight requests was proved. |
+| Process closeout | At **06:07:15.314 UTC**, both registered process incarnations were zombie (`Z`) and no live process matched the exact attempt nonce. Boot/user/start-ticks/process-group/session identities matched; no signal or retry was used. |
+
+Independent local forensic review rehashed all 1,835 entries in the retained original manifest. It found that the original writer published one initial heartbeat, while the first watchdog ACK arrived at T0+5.916 seconds, later than the writer's five-second ACK wait. The continuous heartbeat thread started only after ACK and object setup. This makes a startup race strongly consistent with the timing; the generic writer error does not prove the precise failing assertion. Original failure records remain unchanged.
+
+## V13: local candidate, not a new cloud test
+
+The candidate starts durable writer heartbeats before watchdog spawn, covers startup and subsequent writer work with cleanup, and bounds readiness within the **original** window: the earlier of T0+120 seconds and the original stop-reserve boundary. It retains full child identity/fresh ACK, STOP, funding, boundary, once-only, fixture and drain guards.
+
+The original V13 candidate passed **9/9 injected-stub tests** and independent **static** review. Neither ran a real thread/process/CLI/SDK/signal/cloud path. Same-VM hangs, filesystem blocking and actual CloudShell/cloud latency remain unverified. The [repository snapshot](../tools/c-runtime-controller/README.md) copies the inert driver and fixed source dependencies, with a packaging-only port of the local test's V12 baseline. Its own nine stub tests pass from that directory; the upstream independent review is not an independent review of this packaging.
+
+`ARM_REVIEWED` remains **False**, the preparer pin is `None`, and all 60 actual pins remain pending. The ARMTrue RELEASE, consumed bindings, private logs, plans and state are excluded. The Linux CloudShell paths, current tools and runtime evidence are not completely bound; this snapshot must not be executed against cloud resources. Passing local tests does not authorize another attempt.
+
 ## Current operating state
 
 The application remains paused: eight Lambda functions have reserved concurrency zero, queue mappings are disabled, the outbox rule is disabled, the media bucket has no incoming notification, and its data-deny policy is restored. API, signup, mail, Lex and scheduled processing remain disabled. Retained storage and logs may still consume credit; pausing does not guarantee a zero bill. The additional personal spending limit remains **A$0**.
 
-AWS source revision is `40b5d5f603ef362b50ebe4c317772a53f9b24631`; this documentation commit is not a new cloud deployment. The actual serial-85 raw state was preserved, including its observed empty notification configuration; it must not be overwritten with the old serial-76/59-resource snapshot.
+The deployed AWS source revision recorded for these attempts is `40b5d5f603ef362b50ebe4c317772a53f9b24631`; this documentation/source-snapshot change is not a new cloud deployment. The actual serial-85 raw state was preserved, including its observed empty notification configuration; it must not be overwritten with the old serial-76/59-resource snapshot. Current deployed counts are **AWS 60 / GCP 13**.
+
+The latest GCP12 native result was observed in the console at **07:31:49.884593 UTC**: 41 metadata reads passed, with no HTTP inference call. All 92 native evidence files have now been downloaded and individually hash-verified. The archive, observation and summary hashes are recorded in the selected evidence JSON; the raw files remain private and outside Git. Earlier operator model warmup HTTP 200 remains evidence only for that operator request, not Lambda WIF or automatic media processing. The new AWS CloudShell session passed its official root STS identity check and reported pinned-tool restoration/local validation success; these are tooling checks and do not establish application writes or a new runtime success.
 
 ## Retained evidence
 
@@ -32,15 +57,21 @@ AWS source revision is `40b5d5f603ef362b50ebe4c317772a53f9b24631`; this document
 | Independent all-eight post-check | `77b108c8610223d477f2fdff558781d10c2b2575f3e85d3a3d06c19b39db1b9d` |
 | Original private archive, 678,913 bytes / 2,203 files | `05fad95ee8aa995cf4925605acd3b3e1c8663dc2e84ecb16a6db13356633f859` |
 | Later failed read-only collection summary | `6069e2666fb0ecca94250231aa0b25708d8255b6fa562264296deeb6c1da11f1` |
+| Attempt 2 native archive, 678,835 bytes / 1,835 payload files plus manifest | `7cac5658e60ec6099c2dc07144cceae8617e64c4d7495d4d36b09563f1bc9bae` |
+| Attempt 2 final drain result | `0053842341a98eb1d2ebfbdd7acad05f559c4b3a5078398a815d50633542e457` |
+| Attempt 2 exact-process/native-state closeout | `c4ea1f40683f6c51fd4733daefbc1f081dce01d125f66ed57f3d69128fa5f03f` |
+| V13 upstream local nine-test receipt | `890cf4e4fbcf0b4f5ebd1cf3276368f09b8079d7de6a98ddf5f8b940a3c1a743` |
+| V13 upstream independent static review | `84dc9a88b3471c625f9320319953e242c1e81f4b62a9f9b8859ccc5a36044d1f` |
 
-The original archive was downloaded and every regular file hash checked locally. It contains private raw logs and state and is excluded from Git. Screenshots C12/C13 are retained locally; the clean C13 image shows the actual 03:09 post-check record and is not a new API audit at screenshot time.
+The original archives and their file hashes were checked locally and are excluded from Git. Only [selected nonsecret status/evidence hashes](../evidence/c-runtime-attempts-status-20261025.json) and the inert code snapshot enter this checkpoint. Screenshots C12/C13 are retained locally; the clean C13 image shows the actual 03:09 post-check record and is not a new API audit at screenshot time. No screenshots or raw runtime evidence are added to this commit.
 
 ## Work still required
 
-1. Resolve the read-only SDK worker startup failure and obtain a new, independently checked normal-refresh plan against the actual 60-resource checkpoint.
-2. Obtain fresh quota, funding, GCP and supervisor evidence; present a concrete second test plan. The first scoped approval is consumed and cannot authorize another runtime activation.
-3. Execute one actual image through the automatic AWS–GCP path, preserve outputs and identity evidence, and demonstrate timely pause/recovery with the required observation tail.
-4. Update the architecture, final personal report and handover from actual results. The personal report is draft 5, 389 words, and has passed layout review, but is not a final submission.
+1. Complete current-session tool restoration and native evidence custody; bind and independently review a new plan/controller against the actual 60-resource checkpoint. V13 has only local/static acceptance so far.
+2. Obtain fresh quota, funding, GCP, identity and supervisor evidence and present a concrete new single-use runtime scope. Both previous attempts are consumed and cannot be replayed as a new approval.
+3. Execute one actual image through the automatic AWS–GCP path, preserve real-role WIF/model READY evidence, and demonstrate timely pause/recovery plus the fixture-specific continuous observation tail and Terraform convergence. The 570-second paused-only observation does not replace this active-work acceptance.
+4. Coordinate the remaining deployment security checks with B (final HTTPS-origin CORS and authenticated/anonymous/cross-user access) and the short real-cloud video cadence test with A/D. Existing personal anonymous Run 403 and earlier operator warmup need not be repeated just for screenshots; historical team-environment checks do not become current personal-environment passes.
+5. Finalize the architecture, personal report and private team/staff repository handover from actual results. The personal report is draft 5, 389 words, and has passed layout review, but is not a final submission. GCP credit expiry was observed as 28 October; review retained resources by 27 October and agree assessment-week availability/funding without upgrading the A$0 personal-spend limit.
 
 Vendor selection is AWS + GCP, permitted by Spec p2 and Rubric p7. Oracle is not mandatory. Single-image success would still not establish every team acceptance criterion, video processing, user-isolation testing, private repository access or availability through assessment.
 

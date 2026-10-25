@@ -7,8 +7,8 @@
 
 **当前云厂商选择：** C 的个人部署路线是 AWS + GCP Cloud Run。作业 Spec 第2页允许自行选择厂商并要求至少两家云，Rubric 第7页明确列举 AWS + GCP；Oracle 不是必选厂商。Oracle 模板和未部署主机的记录属于较早路线。厂商选择符合要求，不等于实际跨云处理或整份作业已经验收通过。
 
-**C 部分个人环境最新记录（2026-10-25）：** AWS 当前60项资源，应用保持暂停；GCP私有推理环境13项资源。首次限时测试在投入图片前失败，随后恢复暂停，八项控制已独立复核。真实跨云图片成功次数为0，原600秒恢复目标未通过。
-详见[实际尝试、恢复证据与剩余事项](docs/c-runtime-attempt-and-recovery-20261025.md)。个人报告为第5稿，尚未定稿；当前不宣称完成百分比。下面的核心交接测试记录来自10月8日。
+**C 部分个人环境最新记录（2026-10-25）：** AWS 当前60项资源，应用保持暂停；GCP私有推理环境13项资源。首次限时测试应用保存计划后验证失败，未投入图片，原600秒恢复目标未通过。第二次单图尝试因 heartbeat 停止，未准入 apply、fixture seed 或图片写入，原生只读记录仍为 serial 85。八项控制在 T0+68.766秒读回暂停；随后14轮、570.039秒观察中控制、额度和资金门禁持续有效，但 fixture-specific drain 条件未成立，最终仍为 `drain-not-proven`。真实跨云图片成功次数为 **0**。
+详见[两次实际尝试、恢复证据与剩余事项](docs/c-runtime-attempt-and-recovery-20261025.md)和[精选状态记录](evidence/c-runtime-attempts-status-20261025.json)。V13 启动时序候选已有9项本地 stub 测试及上游独立静态审查通过；[冻结源码快照](tools/c-runtime-controller/README.md)保留 ARMFalse 和未绑定的60个实际 pin，不能直接执行云端。GCP12于07:31:49 UTC在控制台观察到41项元数据读取通过，没有HTTP推理请求，92份原始文件已下载到本地并逐份校验。个人报告为第5稿，尚未定稿；当前不宣称完成百分比。下面的核心交接测试记录来自10月8日。
 
 **核心实现已完成本轮交接；云端运行和访问已暂停，数据与配置保留。**
 AWS 的定时任务、队列处理、七个 Lambda 和 API 已停用；媒体桶也拒绝包括旧签名链接在内的数据读写。
@@ -94,15 +94,17 @@ Grounding DINO 提供候选框，SigLIP2 在同一裁剪上统一比较物种，
 
 ## 云环境与费用
 
-下表和紧随其后的课程账号说明保留10月8日历史环境。当前 C 个人 AWS + GCP 的资源、费用与验收边界见[个人部署交接](docs/c-personal-operations-handover-20261024.md)及[只读检查记录](docs/c-readonly-integration-checkpoint-20261024.md)，不能以旧表推断当前 GCP 没有计算部署。
+下表区分10月8日历史环境与当前 C 个人 AWS + GCP 环境。当前资源与验收边界见[10月25日实际运行记录](docs/c-runtime-attempt-and-recovery-20261025.md)；[10月24日个人部署交接](docs/c-personal-operations-handover-20261024.md)和[只读检查记录](docs/c-readonly-integration-checkpoint-20261024.md)保留当时状态，不能据其旧资源数或旧表推断当前环境。
 
 | 云 | 当前项目状态 |
 |---|---|
-| AWS 课程账号 `360493183467` / `default` / us-east-1 | Cognito、私有 S3、5 张按请求计费 DynamoDB 表、4 个 SQS 工作队列及 DLQ、ECR、7 个 Lambda、HTTP API 保留；运行和访问暂停 |
-| AWS 个人账号 `011154879765` / `ecoguard-personal` | us-east-1个人环境59项资源已部署并暂停；实际跨云图片处理尚未验证，见[最新记录](docs/c-readonly-integration-checkpoint-20261024.md) |
-| Google `ecoguard-fit3184-jlii0474` | IAM/WIF 身份接线，账单未绑定，无计算部署 |
+| AWS 课程账号 `360493183467` / `default` / us-east-1 | 10月8日历史记录：Cognito、私有 S3、5 张按请求计费 DynamoDB 表、4 个 SQS 工作队列及 DLQ、ECR、7 个 Lambda、HTTP API 保留；运行和访问暂停 |
+| AWS 个人账号 `011154879765` / `ecoguard-personal` | 10月25日：us-east-1个人环境60项资源，serial 85；应用暂停，实际跨云图片成功0，见[最新记录](docs/c-runtime-attempt-and-recovery-20261025.md) |
+| Google `ecoguard-fit3184-jlii0474` | 10月8日历史记录：IAM/WIF 身份接线，账单未绑定，无计算部署 |
 | Google `ecoguard-fit3184-a2-2026` | 个人验证环境13项资源，私有Cloud Run及模型warmup已验证；实际Lambda角色调用尚未验证 |
-| Oracle | 既有服务器部署模板已准备；当前未找到可用主机，未部署应用 |
+| Oracle | 较早路线的既有服务器模板；当时未找到可用主机、未部署应用。当前采用AWS + GCP，Oracle不是必选项 |
+
+历史交接中的“59项资源已部署并暂停”保留在10月24日记录；首次保存计划实际应用后成为60项，不能将旧59项状态覆盖到当前serial 85。
 
 课程 API `https://i4zicvj5s2.execute-api.us-east-1.amazonaws.com/api/v1` 当前关闭。
 Cognito pool 为 `us-east-1_9nR2hwyVJ`，client 为 `6io5inllom6a5l43038uhbluvi`；
@@ -111,7 +113,7 @@ Cognito pool 为 `us-east-1_9nR2hwyVJ`，client 为 `6io5inllom6a5l43038uhbluvi`
 
 用户选择保留云端数据和配置，并接受少量存储额度消耗。**暂停不保证账单为零**：
 S3、DynamoDB、日志等保留数据仍可能占用额度；队列消息、TTL 和日志保留期仍继续。
-不创建新 VM、负载均衡或 Google 计算，不启动已停止服务器，不处理其他项目。
+10月8日当时的操作边界为“不创建新 VM、负载均衡或 Google 计算，不启动已停止服务器，不处理其他项目”；这不是后来获准的个人GCP私有推理部署的当前资源描述。新的运行或权限变更须按当前具体范围核验，不能重放已消耗的尝试许可。
 [停用、检查及恢复说明](infra/aws/SHUTDOWN.md)。密钥、登录缓存、`.env`、原图／向量、Terraform state 均不入 Git。
 
 ## 代码与队友接管
