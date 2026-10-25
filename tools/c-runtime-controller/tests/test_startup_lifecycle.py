@@ -185,18 +185,21 @@ class StartupLifecycleTests(unittest.TestCase):
     def test_core_once_deadline_and_other_modules_unchanged(self):
         # Packaging-only port: frozen hashes/ASTs replace a sibling work directory.
         baseline=json.loads((HERE/'tests/fixtures/v12-static-baseline.json').read_text())
+        reviewed=json.loads((HERE/'tests/fixtures/v15-reviewed-snapshot.json').read_text())
         for name,expected in baseline['dependencySHA256'].items():
-            if name=='fixture_runtime.py':
-                # Checkpoint51 independently reviewed Head-only JSON fix.
-                expected=json.loads((HERE/'tests/fixtures/fixture-runtime-before-json-error-fix.json').read_text())['reviewedFixtureJSONFixSHA256']
+            expected=reviewed['dependencyOverrides'].get(name,expected)
             self.assertEqual(hashlib.sha256((HERE/name).read_bytes()).hexdigest(),expected,name)
+        self.assertEqual(hashlib.sha256((HERE/'controller_driver.py').read_bytes()).hexdigest(),reviewed['driverSHA256'])
         after={node.name:ast_fingerprint(node)
             for node in ast.parse((HERE/'controller_driver.py').read_text()).body
             if isinstance(node,(ast.FunctionDef,ast.ClassDef))}
         self.assertTrue(set(baseline['canonicalFunctionASTSHA256']).issubset(after))
         changed={name for name,expected in baseline['canonicalFunctionASTSHA256'].items()
             if after[name]!=expected}
-        self.assertEqual(changed,{'run_mode'})
+        self.assertEqual(changed,set(reviewed['changedFromV12FunctionASTSHA256']))
+        for name,expected in reviewed['changedFromV12FunctionASTSHA256'].items():
+            self.assertEqual(after[name],expected,name)
         self.assertFalse(driver.ARM_REVIEWED);self.assertIsNone(driver.ACTIVATION_PREPARER_SHA256)
+        self.assertIsNone(driver.CURRENT_PAUSED_AUDIT_SHA256)
 
 if __name__=='__main__':unittest.main(verbosity=2)

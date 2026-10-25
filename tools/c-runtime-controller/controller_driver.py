@@ -23,15 +23,12 @@ from datetime import datetime, timezone, timedelta
 
 ARM_REVIEWED = False
 CORE_SHA256 = 'bb203938157d1fc2a2a8965f4e3e8b29e6c2371496912086b22c279ad06f1af5'
-PRIVATE_RUNTIME_SHA256 = '77030fe0890b9972287bbcf13ae3f7e95607f220beb484adce764c35db68dd76'
-AWS_RUNTIME_SHA256 = '6cf85fd42f7d8ac557a213c97569d9202517f2168690cbacc40e0758038bb7f3'
+PRIVATE_RUNTIME_SHA256 = '31168c5ad1871250f1e0fa45abd1170561344d74302e5792108427c1f01094e6'
+AWS_RUNTIME_SHA256 = '88bd456dce12d44f6a1724a7c6831f0324e0b999aa31adbaf150f57e6e66ef53'
 SDK_BRIDGE_SHA256 = 'aaedd932c2870fcb3031f1749b5f2e9b72dd4d5abfd47a173eb2dd6d2a78eec0'
 SDK_WORKER_SHA256 = '92647337b7cec2a9a27e57100b6a15e93c488e735a3ee25966110b0b52efcb0d'
 SDK_MANIFEST_SHA256 = '38a63a55f3410cea5fbc2dc547a222103d6679e8677350e7e2f3560f7e58d1a3'
-ACTIVATION_REVIEWER_SHA256 = '4bc2a30348c7ed2f7c66bade91dad9dd8ec34a786bbdeac8e18a918519341997'
-ORIGINAL_ACTIVATION_REVIEWER_SHA256 = 'aeb37b83a6090f998de096365013ca58b695a2f584da6df9bd30fc94310c8c3e'
-ORIGINAL_ACTIVATION_BLOCKED_SHA256 = '562cac84155d1fbd183d4003021ef3a613df9484942cf943edbafe525d501cef'
-ACTIVATION_ADOPTER_SHA256 = '6e5b19376cc308e27d615c529929903bbdce27518486bbedd594b559e940f1b0'  # Code review only; actual adoption receipt remains separately pending.
+ACTIVATION_REVIEWER_SHA256 = '880f42268fa66c90285d03a89d8cc10c549a248abb3b9351a2290573bb13f9ba'
 ACTIVATION_PREPARER_SHA256 = None  # Bound only after the new prepare-only source is reviewed.
 STARTUP_READINESS_SECONDS = 120  # Consumes the original window; never resets T0 or the stop reserve.
 FIXTURE_RUNTIME_SHA256 = '8aa156b52a5a0979a08544d770809d7e069dc1d82aba8f283118cc566329ccf1'
@@ -49,8 +46,52 @@ UPDATES = {MODULE+'aws_lambda_function.ingest[0]', MODULE+'aws_lambda_function.z
  MODULE+'aws_s3_bucket_policy.media_tls'}
 NEW_NOTIFICATION = MODULE+'aws_s3_bucket_notification.uploads[0]'
 SOURCE_GATE_SHAS = {'check_processing_plan.py': '8aa53c59a0f0fd56e70f42e08ec2f2f2960784bf8ec7aba7e9e6ee85f7e1dfbe', 'check_staged_increment_plan.py': '59d7977be2a008e6faf707ec30bf9e13d587ed4067f629b875320df86757857a', 'check_ecr_policy_plan.py': 'a871ad36b2c55d808adaf28a5d637cd544f7e4750d20545094a3019b5daba0fb', 'check_plan.py': '36bce117903730ffbd86a927209cf7f642a104a622b52e2545a58fe9935e898d'}
-CURRENT_RAW_STATE_SHA256 = '7b4d5aed8ce5fd253fceac940637c67554ec0dadea61ca5a352e44a03b455204'
-CURRENT_PAUSED_AUDIT_SHA256 = '77b108c8610223d477f2fdff558781d10c2b2575f3e85d3a3d06c19b39db1b9d'
+CURRENT_RAW_STATE_SHA256 = '5de33593233eed3023b35a6f359238f17a3b56cfd349ea64291581b939cf7fc5'
+CURRENT_PAUSED_AUDIT_SHA256 = None  # Actual current C14 API proof has not run; never infer success.
+
+CURRENT_STATE_SERIAL = 95
+CURRENT_PAUSED_COLLECTOR_SHA256 = 'd730135c020ff2b5777be338e9c6c61170c0ce878fb30020af0a5033c94b7424'
+CURRENT_IDENTIFIERS_SHA256 = 'cb7979805898ef73280107d3c6bfec8839c2270af7be5249f71a040a3fcfbbef'
+CURRENT_PREVIOUS_ACTIVATION_SHA256 = 'd4535797e7a1ee316f5ff779c4358dabf6c5af6542c421d8de961a3bf86265b6'
+REVIEWED_PREPARER_SHA256 = '623aebcf730f640295b252cca057d4c2e17eb2a12a82a12644e00a4462797554'
+CURRENT_RECONCILIATION_SHA256 = '7de373531995b42d7da65b7882eedc21afb41eac1600cede6a963b61aafb8855'
+ACTIVATION_NATIVE_FILES = {'fresh-function-inventory-outcome.json': '464279cfe3d878e859e02e75c09f88703e56237f8c948e2b16af4f7f2bee8206',
+ 'fresh-function-inventory-started.json': 'f3837401d6b2214bf6b45a84af25bddcf9ebfe864a35f5070674d9aeaaeabc68',
+ 'fresh-function-inventory-stderr-private.bin': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+ 'fresh-function-inventory-stdout-private.bin': 'd5ff4f210fcc78ce59c4ab99b9f3ef42bebb50405da715ccf890de75c6c0214e',
+ 'fresh-quota-settings-outcome.json': 'a4bb16fe73a5a5c7c397215d883d83180bf88bba46c2d163b4ff9245feab5781',
+ 'fresh-quota-settings-started.json': '4185b6654eb7207e7b7f4319cd4b2e6ecabf3ee9976db304e57fbd05d319a94d',
+ 'fresh-quota-settings-stderr-private.bin': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+ 'fresh-quota-settings-stdout-private.bin': '39f2ba2a69c4575bd5863107645ae203688a31c4fbc4f6cc7bfcd3676f444295',
+ 'fresh-root-identity-outcome.json': '99ee5d651fad309542d227ca2624a85ce0242058f56c7d8cce66010fe3f87092',
+ 'fresh-root-identity-started.json': '96e6c6a9cc4392f928ae9d9a686c4c5e95e14ea8a32d291a0bea8e47aa63fbdb',
+ 'fresh-root-identity-stderr-private.bin': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+ 'fresh-root-identity-stdout-private.bin': '62e5a00ca75bf7e8104d15a1dbf63b50599d47822e0098c2d9818adb8c577299',
+ 'input-evidence-sha256-private.json': '3f3dd234b8e1c29ef44ff5e5f3a3ae5822512803ddfdcd21d248301721d0c9f4',
+ 'normal-refresh-plan-outcome.json': 'ec861a9a1cb2e45e183addda9fe0b0bae51ef741b17b849bd0b453ddbc554d7f',
+ 'normal-refresh-plan-started.json': '8e88cb3754e7804443bb88e405e905a0b061a9005c7462845939eb3a29238476',
+ 'normal-refresh-plan-stderr-private.bin': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+ 'normal-refresh-plan-stdout-private.bin': '57ef596c640d559fca2f8ec8ef085c0016f0ff30088d3293ef4b61ec9a4a3c62',
+ 'physical60-values-private.json': 'cdb5e236fb118386f6af2f7b8d89e1fcd1ddba9d796e40c7a0074508d3d5ae01',
+ 'physical95-show-outcome.json': '65298798a2f012ef1668c5169a7ebf06ce28938d66dd3c0c236528f560895590',
+ 'physical95-show-started.json': '0af929bf7772f043ed7d6094811bce7beca1dfbfd5da0d57c82fdcfd19ba9f5f',
+ 'physical95-show-stderr-private.bin': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+ 'physical95-show-stdout-private.bin': 'cdb5e236fb118386f6af2f7b8d89e1fcd1ddba9d796e40c7a0074508d3d5ae01',
+ 'plan-started-private.json': 'd977f486d181415ffddd6f3d1d464a80c97e4a41eca95442ddb8b3647cc85d5d',
+ 'processing-plan-private.json': 'bbe0b54d3f36b54c1e20bfe3576c367826aa6f61a661b5c9f9f3e58f60d3b8e8',
+ 'processing.tfplan': 'a9271f1599a57f618e57ec1456bc56e4f01cac263a544afb10d7d26b59a77504',
+ 'quota-private.json': 'd9b00c9e9f8fb5e0f54682712773a6bf353dc46bea6af218da0e628aadde2e1e',
+ 'saved-plan-show-outcome.json': '15261e750d1718377c20b2730e86f046f84d100870c8eef19186b749d8899a2f',
+ 'saved-plan-show-started.json': 'b702b1e446ff942824394f6404881f68ea5ed7eed83bf1aa464c1e15f7b30259',
+ 'saved-plan-show-stderr-private.bin': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+ 'saved-plan-show-stdout-private.bin': 'bbe0b54d3f36b54c1e20bfe3576c367826aa6f61a661b5c9f9f3e58f60d3b8e8',
+ 'state-before-private.tfstate': '5de33593233eed3023b35a6f359238f17a3b56cfd349ea64291581b939cf7fc5',
+ 'strict-gate-review-private.json': '689321401f207a8c95a080911e4884aca2f554b0c3d2de9626459ef8b9e60066',
+ 'summary-private.json': 'ae048a8fdb229fd984dc3e90049a3e7a9c3b62466e12a70b70c82a74cad65114',
+ 'terraform-version-outcome.json': '6dff7a6b07fb13c58742dd7821448c521a58625d462b0a8e8e649a863f22ed72',
+ 'terraform-version-started.json': '540d166eac3c67a85760a6e235ab36d793e06cdc011176715f5f609c089c433c',
+ 'terraform-version-stderr-private.bin': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+ 'terraform-version-stdout-private.bin': 'c23815916318063e87e0a030bc98e8eda3c873c361981bc150356e9aed60bf40'}
 
 
 def require(ok, message):
@@ -129,11 +170,10 @@ def raw_addresses(state):
 
 def review_plan_shape(document, state_addresses, reviewer):
     # Full joins/typed field changes are independently reviewed below. No row is removed.
-    rows=document.get('resource_drift')
+    rows=document.get('resource_drift',[])
     updates=UPDATES|{NEW_NOTIFICATION}
-    require(type(rows) is list and len(rows)<=8 and len({r.get('address') for r in rows})==len(rows)
-      and {r.get('address') for r in rows}<=updates,
-      'Only observed differences within the eight emergency-control targets are reviewable')
+    require(type(rows) is list and rows==[],
+      'Only the new drift-free physical95 normal plan is reviewed')
     require(document.get('complete') is True and document.get('errored') is False
       and not document.get('deferred_changes') and not document.get('action_invocations'),'Incomplete/deferred/error blocks arming')
     prior=managed(document['prior_state']['values']['root_module'])
@@ -238,32 +278,67 @@ def review_paused59_chain(core, pins, original, verification):
 
 
 def review_paused60_chain(binding,core):
-    pins=binding['actualPins'];a=binding['artifacts']
-    require(pins['paused60RawStateSHA256']==CURRENT_RAW_STATE_SHA256 and pins['paused60StateSerial']==85
-      and type(pins['paused60StateSerial']) is int and pins['paused60StateLineage']=='58808681-d69a-1fe0-b562-796a24a58fdc'
+    pins=binding['actualPins'];artifacts=binding['artifacts'];ctx=binding['context']
+    require(type(CURRENT_PAUSED_AUDIT_SHA256) is str and re.fullmatch('[0-9a-f]{64}',CURRENT_PAUSED_AUDIT_SHA256),
+      'Actual current C14 paused API receipt is pending; state-only reconciliation is not API proof')
+    require(pins['paused60RawStateSHA256']==CURRENT_RAW_STATE_SHA256
+      and type(pins['paused60StateSerial']) is int and pins['paused60StateSerial']==CURRENT_STATE_SERIAL
+      and pins['paused60StateLineage']=='58808681-d69a-1fe0-b562-796a24a58fdc'
       and pins['paused60ReadOnlyVerificationReceiptSHA256']==CURRENT_PAUSED_AUDIT_SHA256
-      and pins['paused60PreviousActivationReceiptSHA256']=='e07ef7ef2ee4c8a14edbddb7beb5f432305cd8207bcb4a2f390835f82be3f4b8',
-      'Exact current raw85/adopted60 and independent paused proof required')
-    activation=json.loads(Path(a['paused60PreviousActivationReceiptSHA256']['path']).read_text())
-    audit=json.loads(Path(a['paused60ReadOnlyVerificationReceiptSHA256']['path']).read_text())
-    old_nonce='7d534efd196c595a132a18fec7230f0a68cf3b3bf16a0b64ac3df0b18c01987a'
-    old_context='947b29e366c148eb31f4766b30c776ba3a6044eaee5b11d4e131dcd10ddccb06'
-    require(all(type(x) is dict and set(x)=={'contextSHA256','nonce','payload'} and x['nonce']==old_nonce
-      and x['contextSHA256']==old_context for x in (activation,audit)),'Retain the exact first consumed attempt envelopes')
-    require(core.same(activation['payload'],{'activationAttempted':True,'activeVerified':False,'fixtureSubmitted':False,
-      'inputClosureVerified':True,'retryPermitted':False,'status':'blocked-stop-required','stopRequestRecorded':True,'watchdogMustRemainArmed':True}),
-      'Do not rewrite the first activation as verified or replayable')
-    expected={'status':'all-eight-emergency-controls-paused-boundaries-and-empty-backlog-observed',
-      'controlsPaused':True,'managedResources':60,'rawStateSerial':85,'rawStateSHA256':CURRENT_RAW_STATE_SHA256,
-      'fullProjectBoundariesVerified':True,'allFiveTablesAndEightQueuesEmptyObserved':True,'stateWritten':False,
-      'terraformInvoked':False,'controlMutationsInvoked':False,'fixtureInvoked':False,'originalDriverActiveVerified':False,
-      'originalFailuresPreserved':True,'readOnlyAuditDoesNotAuthorizeFurtherWork':True,'applicationDrained':False,
-      'terraformConfigurationConverged':False,'helperSHA256':'314c3426330550ede9bec0fc4d79ddd2e4ef25b761077c97630551c0449cd171'}
-    require(all(core.same(audit['payload'].get(k),v) for k,v in expected.items()),'Independent current60 pause/boundary/backlog proof differs')
-    for label in ('allEightReadbacks','tailReadbacks'):
-        rows=audit['payload'].get(label)
-        require(type(rows) is dict and set(rows)==set(core.TARGETS)
-          and all(row.get('pausedVerified') is True for row in rows.values()),'Both complete eight-control readbacks must pass')
+      and pins['paused60PreviousActivationReceiptSHA256']==CURRENT_PREVIOUS_ACTIVATION_SHA256,
+      'Exact current95 and separate actual paused API proof required')
+    # This is the third consumed activation's original result, never the new
+    # plan's authorization or a claim that the image completed.
+    activation=json.loads(pinned(artifacts['paused60PreviousActivationReceiptSHA256']['path'],CURRENT_PREVIOUS_ACTIVATION_SHA256).read_text())
+    require(core.same(activation,{'contextSHA256':'f1d7860c620e9b830b50e6f74ae0e4a83747665cdcd2b6901448be89f74d9938',
+      'nonce':'e94d47afa93d473c4ece8d647e21f09c9a382447c74c460a29c541a18649240f',
+      'payload':{'activationAttempted':True,'activeVerified':True,'fixtureSubmitted':False,'inputClosureVerified':False,
+      'retryPermitted':False,'status':'active-profile-verified','stopRequestRecorded':False,'watchdogMustRemainArmed':True}}),
+      'Preserve the exact consumed third activation result without upgrading its fixture outcome')
+    result=BASE/'processing-binding-readonly-inputs-20261025-14-paused95'
+    producer=BASE/'processing-binding-readonly-collector-20261025-14-paused95/collector.py'
+    require(artifacts['paused60ReadOnlyVerificationReceiptSHA256']['path']==str(result/'summary-private.json'),
+      'Current paused API receipt canonical path differs')
+    audit=json.loads(pinned(result/'summary-private.json',CURRENT_PAUSED_AUDIT_SHA256).read_text())
+    expected={'status':'readonly-binding-inputs-collected','identifiersSHA256':CURRENT_IDENTIFIERS_SHA256,
+      'criticalPausedChecksPassed':34,'allEightReservedZero':True,'fourMappingsSoleAndDisabled':True,
+      'allEightControlProfilesMeasured':True,'fullBoundariesMeasured':True,'allFiveTablesEightQueuesObserved':True,
+      'sourceAndStateUnchanged':True,'managedResources':60,'rawStateSerial':CURRENT_STATE_SERIAL,
+      'rawStateSHA256':CURRENT_RAW_STATE_SHA256,'actualControlsPaused':True,
+      'candidateActivationPlanSHA256':ACTIVATION_NATIVE_FILES['processing.tfplan'],'nativePlanHistoricalProofOnly':True,
+      'terraformConfigurationConverged':False,'previousRuntimeNoncesNotReused':True,
+      'threeComputedRevisionIdsProjectedOnlyForImmutableProfile':True,'allRawControlProfilesRetained':True,
+      'seedRequestCreated':False,'createdAtStillPending':True,'cloudMutationInvoked':False,'terraformInvoked':False,
+      'controllerArmed':False,'contextComplete':False,'newApprovalClaimed':False,'activationAuthorized':False,
+      'runtimeActivated':False,'fixtureSubmitted':False,'createdAtUtc':None,'retryPermitted':False,'maximumCollectionSeconds':240}
+    require(all(core.same(audit.get(k),v) for k,v in expected.items()),'Actual full fresh C14 paused/control/boundary/backlog receipt differs')
+    require(type(audit.get('elapsedSeconds')) in (int,float) and math.isfinite(audit['elapsedSeconds'])
+      and 0<=audit['elapsedSeconds']<=240 and 0<=(datetime.now(timezone.utc)-stamp(audit['observedAtUtc'])).total_seconds()<=3600,
+      'Current paused baseline elapsed/time differs')
+    proof=binding['currentPauseProof']
+    require(type(proof) is dict and set(proof)=={'producer','inputs','identifiers'}
+      and proof['producer']=={'path':str(producer),'sha256':CURRENT_PAUSED_COLLECTOR_SHA256}
+      and proof['inputs']['path']==str(result/'input-evidence-sha256-private.json')
+      and proof['identifiers']=={'path':str(BASE/'future-processing-attempt-identifiers-20261025-4.json'),
+      'sha256':CURRENT_IDENTIFIERS_SHA256},'Exact current readonly collector source/input/identifier references required')
+    pinned(producer,CURRENT_PAUSED_COLLECTOR_SHA256)
+    inputs=json.loads(pinned(proof['inputs']['path'],proof['inputs']['sha256']).read_text())
+    require(type(inputs) is dict and inputs.get(str(producer))==CURRENT_PAUSED_COLLECTOR_SHA256
+      and inputs.get(str(BASE/'source/infra/aws/environments/personal/state/terraform.tfstate'))==CURRENT_RAW_STATE_SHA256
+      and inputs.get(proof['identifiers']['path'])==CURRENT_IDENTIFIERS_SHA256,'Collector retained input anchors differ')
+    for name,digest in inputs.items():
+        path=Path(name)
+        require(path.is_absolute() and '..' not in path.parts and (path.is_relative_to(BASE)
+          or path.is_relative_to(Path('/tmp/ecoguard-aws-tool-restore-20261024-1/terraform-data'))
+          or path in {Path('/tmp/ecoguard-c-personal-20261023/tools/terraform'),Path('/usr/local/aws-cli/v2/2.38.1/dist/aws'),
+                      Path('/usr/bin/python3.13'),Path('/usr/local/python3.13/bin/python3')})
+          and not any(v.lower() in {'.aws','credentials','token.json','application_default_credentials.json'} or v.startswith('.env') for v in path.parts),
+          'Collector input escaped fixed evidence/tool scope')
+        pinned(path,digest)
+    identifiers=json.loads(pinned(proof['identifiers']['path'],CURRENT_IDENTIFIERS_SHA256).read_text())
+    require(identifiers['nonce']==ctx['nonce'] and identifiers['fixture']['createdAtUtc'] is None
+      and all(core.same(identifiers['fixture'][k],ctx['fixture'][k]) for k in ('ownerSub','jobId','mediaId')),
+      'New context must use the genuine unconsumed C14 identifier set')
     history=binding['historicalPaused59']
     require(set(history)=={'pins','artifacts','role'} and history['role']=='historical-only-not-current-checkpoint'
       and set(history['artifacts'])=={'paused59RawStateSHA256','paused59ApplyReceiptSHA256','paused59ReadOnlyVerificationReceiptSHA256'},
@@ -271,127 +346,68 @@ def review_paused60_chain(binding,core):
     for key,record in history['artifacts'].items():pinned(record['path'],history['pins'][key])
     review_paused59_chain(core,history['pins'],json.loads(Path(history['artifacts']['paused59ApplyReceiptSHA256']['path']).read_text()),
       json.loads(Path(history['artifacts']['paused59ReadOnlyVerificationReceiptSHA256']['path']).read_text()))
-    require(core.same(binding['context'].get('currentCheckpoint'),{'rawStateSHA256':CURRENT_RAW_STATE_SHA256,'serial':85,'managedResources':60,
+    require(core.same(binding['context'].get('currentCheckpoint'),{'rawStateSHA256':CURRENT_RAW_STATE_SHA256,'serial':CURRENT_STATE_SERIAL,'managedResources':60,
       'independentPausedProofSHA256':CURRENT_PAUSED_AUDIT_SHA256}),'Immutable shared context must explicitly bind the current60 checkpoint')
     return True
 
 def review_independent_receipt(core, reviewer, checked, receipt, document, quota):
-    require(core.same(receipt,checked),'Strict adopted60 review receipt differs from fresh pure review')
-    require(checked.get('status')=='offline-adopted60-processing-plan-passed'
-      and checked.get('mode')=='reactivate-adopted' and checked.get('creates')==0
-      and checked.get('updates')==8 and checked.get('noops')==52
-      and type(checked.get('reviewedEmergencyPauseDriftResources')) is int
-      and 0<=checked['reviewedEmergencyPauseDriftResources']<=8
-      and checked.get('reviewedEmergencyPauseTargetAllowlist')==8
-      and checked.get('fullPhysicalPriorEqual') is False and checked.get('fullReviewedRefreshedPriorEqual') is True
-      and checked.get('applyAuthorized') is False,'Exact honest adopted60 gate result required')
+    require(core.same(receipt,checked),'Strict paused95 review receipt differs from fresh pure review')
+    expected={'status':'offline-paused95-processing-plan-passed','mode':'reactivate-paused-adopted',
+      'creates':0,'updates':8,'noops':52,'deletes':0,'fullPhysicalPriorEqual':True,
+      'physicalPriorFullyEqual':True,'fullReviewedRefreshedPriorEqual':True,'resourceDriftResources':0,
+      'allOther52PhysicalValuesExact':True,'allElevenNativeOutputDescriptorsUnchanged':True,
+      'securityUnknownsAllowed':False,'noNewIAMOrService':True,'applyAuthorized':False}
+    require(all(core.same(checked.get(k),v) for k,v in expected.items()),'Exact honest new paused95 gate result required')
     return True
 
 
 def review_native_activation(binding, core, document, physical):
-    """Pure same-native re-review; original blocked preparation stays original."""
+    """Re-review the genuine unused normal-plan PASS, without an adopter role."""
     pins,artifacts=binding['actualPins'],binding['artifacts']
-    require(type(ACTIVATION_REVIEWER_SHA256) is str and re.fullmatch('[0-9a-f]{64}',ACTIVATION_REVIEWER_SHA256)
-      and pins['activationIndependentReviewerSHA256']==ACTIVATION_REVIEWER_SHA256,'Frozen adopted60 reviewer pending')
-    require(pins['activationSavedPlanSHA256']=='94c62df2f06a545e8c1d7c48ed1ce18b8c96e19109fc36c777ae29878c494ebc'
-      and pins['activationPlanJSONSHA256']=='c2df000da29d570ddbdd0304fc14384d7f2250e76c6561ef8efc43271270cde1'
-      and pins['paused60PhysicalExportSHA256']=='c222b0d92d86ad962113d04e43e67fde07a66e9378ad48c1f2284a1bd08df02c',
-      'Only this original unconsumed adopted60 native binary/JSON/export may be adopted')
-    reviewer=load(artifacts['activationIndependentReviewerSHA256']['path'],ACTIVATION_REVIEWER_SHA256,'reviewed_adopted60_gate')
-    root=BASE/'source/infra/aws/environments/personal'
-    for name,digest in SOURCE_GATE_SHAS.items():pinned(root/name,digest)
-    gate=load(root/'check_processing_plan.py',SOURCE_GATE_SHAS['check_processing_plan.py'],'unchanged_source47_processing_gate')
-    gate.LIVE_QUOTA_EVIDENCE_SHA256=pins['activationHistoricalQuotaEvidenceSHA256']
-    quota=json.loads(Path(artifacts['activationHistoricalQuotaEvidenceSHA256']['path']).read_text())
-    require(document.get('format_version')=='1.2' and document.get('terraform_version')=='1.17.0'
-      and document.get('applyable') is True,'Native saved plan format differs')
-    raw=json.loads(Path(artifacts['paused60RawStateSHA256']['path']).read_text())
-    review_plan_shape(document,raw_addresses(raw),reviewer)
-    checked=reviewer.inspect_plan(gate,document,physical,image=binding['readonly']['workerImageUri'],
-      zip_filename=str(BASE/'artifacts/aws-personal-lambda-20261023-1.zip'),window_seconds=binding['context']['windowSeconds'],
-      quota_evidence=quota,quota_evidence_sha256=pins['activationHistoricalQuotaEvidenceSHA256'],review_time=stamp(document['timestamp']))
-    receipt=json.loads(Path(artifacts['activationStrictReviewSHA256']['path']).read_text())
-    review_independent_receipt(core,reviewer,checked,receipt,document,quota)
-    provenance=binding['activationReview']
-    require(type(provenance) is dict and set(provenance)=={'preparer','originalReviewer','adopter'}
-      and type(ACTIVATION_PREPARER_SHA256) is str and re.fullmatch('[0-9a-f]{64}',ACTIVATION_PREPARER_SHA256)
-      and provenance['preparer']['sha256']==ACTIVATION_PREPARER_SHA256
-      and provenance['originalReviewer']['sha256']==ORIGINAL_ACTIVATION_REVIEWER_SHA256
-      and type(ACTIVATION_ADOPTER_SHA256) is str and re.fullmatch('[0-9a-f]{64}',ACTIVATION_ADOPTER_SHA256)
-      and provenance['adopter']['sha256']==ACTIVATION_ADOPTER_SHA256,'Original preparation and independent adoption source pins pending')
-    prepmod=load(provenance['preparer']['path'],ACTIVATION_PREPARER_SHA256,'reviewed_original_adopted60_preparer_constants')
-    pinned(provenance['originalReviewer']['path'],ORIGINAL_ACTIVATION_REVIEWER_SHA256)
-    pinned(provenance['adopter']['path'],ACTIVATION_ADOPTER_SHA256)
-    require(provenance['adopter']['path']==str(BASE/'frozen-adopt-adopted60-processing-plan-20261025-1.py')
-      and artifacts['activationIndependentReviewerSHA256']['path']==str(BASE/'frozen-review-adopted60-processing-plan-20261025-3.py')
-      and prepmod.HEAD==pins['sourceRevision'] and prepmod.STATE_SHA==CURRENT_RAW_STATE_SHA256
-      and prepmod.SERIAL==85 and str(prepmod.STATE)==str(root/'state/terraform.tfstate')
-      and prepmod.REVIEWER_SHA==ORIGINAL_ACTIVATION_REVIEWER_SHA256
-      and str(prepmod.REVIEWER)==provenance['originalReviewer']['path'],
-      'Original normal-refresh preparer and its original reviewer must remain separate from adoption')
-    expected_argv=prepmod.expected_plan_argv(str(BASE/'artifacts/aws-personal-lambda-20261023-1.zip'))
-    require(expected_argv==[binding['tools']['terraform']['path'],'-chdir='+str(root),'plan','-input=false','-no-color',
-      '-refresh=true','-lock-timeout=60s','-var=deployment_stage=processing-bounded','-var=adopt_upload_notifications=true',
-      '-var=lambda_zip='+str(BASE/'artifacts/aws-personal-lambda-20261023-1.zip'),
-      '-var=worker_image='+binding['readonly']['workerImageUri'],'-var=inference_url='+prepmod.RUN,
-      '-out='+str(prepmod.PLAN/'processing.tfplan')],'Only exact original normal untargeted saved-plan generation is reviewed')
-    adoption=root/'private/processing-adopted60-plan-independent-review-20261025-1'
-    original_files={'activationSavedPlanSHA256':'processing.tfplan','activationPlanJSONSHA256':'processing-plan-private.json',
+    require(ACTIVATION_PREPARER_SHA256==REVIEWED_PREPARER_SHA256
+      and pins['activationIndependentReviewerSHA256']==ACTIVATION_REVIEWER_SHA256,
+      'Exact reviewed normal-plan preparer/reviewer code pins required')
+    roles={'activationSavedPlanSHA256':'processing.tfplan','activationPlanJSONSHA256':'processing-plan-private.json',
       'paused60PhysicalExportSHA256':'physical60-values-private.json','activationPreparationReceiptSHA256':'summary-private.json',
-      'activationPlanStartedSHA256':'plan-started-private.json','activationInputManifestSHA256':'input-evidence-sha256-private.json'}
-    adopted_files={'activationGateReceiptSHA256':'summary-private.json','activationReviewInputManifestSHA256':'input-evidence-sha256-private.json',
-      'activationStrictReviewSHA256':'strict-gate-review-private.json'}
-    require(all(artifacts[k]['path']==str(prepmod.PLAN/name) for k,name in original_files.items())
-      and all(artifacts[k]['path']==str(adoption/name) for k,name in adopted_files.items()),'Separate original/adopted artifact paths differ')
-    require(pins['activationPreparationReceiptSHA256']==ORIGINAL_ACTIVATION_BLOCKED_SHA256,'Original blocked preparation must be preserved')
-    original=json.loads(pinned(artifacts['activationPreparationReceiptSHA256']['path'],ORIGINAL_ACTIVATION_BLOCKED_SHA256).read_text())
-    expected_original={'status':'blocked','sourceRevision':pins['sourceRevision'],'stateSHA256':CURRENT_RAW_STATE_SHA256,
-      'serial':85,'lineage':pins['paused60StateLineage'],'priorManagedResources':60,'planExecuted':True,'planExitCode':0,
-      'applyExecuted':False,'stateWritten':False,'iamModified':False,'cloudMutationCommandsInvoked':False,'fixtureSubmitted':False,
-      'runtimeActivated':False,'applicationInvoked':False,'automaticRetry':False,'applyAuthorized':False,'refresh':True,
-      'refreshOnly':False,'targetUsed':False,'consumedPreviousPlanReplayed':False,'savedPlanSHA256':pins['activationSavedPlanSHA256'],
-      'planJSONSHA256':pins['activationPlanJSONSHA256'],'physicalExportSHA256':pins['paused60PhysicalExportSHA256'],
-      'inputManifestSHA256':pins['activationInputManifestSHA256'],'startedSHA256':pins['activationPlanStartedSHA256'],
-      'helperSHA256':ACTIVATION_PREPARER_SHA256,'errorType':'ValueError','stateSourceAndEvidenceUnchanged':True}
-    require(all(core.same(original.get(k),v) for k,v in expected_original.items()),'Original blocked/plan-exit0 preparation chain differs')
-    adopted=json.loads(Path(artifacts['activationGateReceiptSHA256']['path']).read_text())
-    expected_adopted={'status':'same-native-adopted60-reactivation-plan-independently-reviewed',
-      'sourceRevision':pins['sourceRevision'],'stateSHA256':CURRENT_RAW_STATE_SHA256,'serial':85,'lineage':pins['paused60StateLineage'],
-      'managedResources':60,'creates':0,'updates':8,'noops':52,'deletes':0,
-      'savedPlanSHA256':pins['activationSavedPlanSHA256'],'planJSONSHA256':pins['activationPlanJSONSHA256'],
-      'physicalExportSHA256':pins['paused60PhysicalExportSHA256'],'originalBlockedSummarySHA256':ORIGINAL_ACTIVATION_BLOCKED_SHA256,
-      'originalPreparerSHA256':ACTIVATION_PREPARER_SHA256,'originalReviewerSHA256':ORIGINAL_ACTIVATION_REVIEWER_SHA256,
-      'independentReviewerSHA256':ACTIVATION_REVIEWER_SHA256,'helperSHA256':ACTIVATION_ADOPTER_SHA256,
-      'strictReviewSHA256':pins['activationStrictReviewSHA256'],'inputManifestSHA256':pins['activationReviewInputManifestSHA256'],
-      'startedSHA256':pins['activationPlanStartedSHA256'],'originalInputManifestSHA256':pins['activationInputManifestSHA256'],
-      'originalPreparationStatus':'blocked','originalPlanExitCode':0,'originalBlockedSummaryPreserved':True,
-      'sourceFilesAndOriginalEvidenceUnchanged':True,'rawStateUnchanged':True,'applyAuthorized':False,'planExecuted':False,
-      'applyExecuted':False,'stateWritten':False,'cloudAPIsInvoked':False,'CLIInvoked':False,'fixtureSubmitted':False,
-      'runtimeActivated':False,'quotaAtHistoricalPlanTimeOnly':True,'freshQuotaRequiredBeforeActivation':True}
-    require(all(core.same(adopted.get(k),v) for k,v in expected_adopted.items()),'Independent same-native adoption receipt differs')
-    started=json.loads(Path(artifacts['activationPlanStartedSHA256']['path']).read_text())
-    expected_started={'argv':expected_argv,'helperSHA256':ACTIVATION_PREPARER_SHA256,'sourceRevision':pins['sourceRevision'],
-      'stateSHA256':CURRENT_RAW_STATE_SHA256,'serial':85,'quotaReceiptSHA256':pins['activationHistoricalQuotaEvidenceSHA256'],
-      'normalRefresh':True,'refreshOnly':False,'targetUsed':False,'maximumPlanCommands':1,'retryPermitted':False,
-      'consumedPreviousPlanSHA256':'fda814c5a9d02fff548d424b7f624e352739fdee37adfe3921043bdc70e0526a'}
-    require(set(started)==set(expected_started)|{'startedAtUtc'} and all(core.same(started.get(k),v) for k,v in expected_started.items())
-      and stamp(started['startedAtUtc']).replace(microsecond=0)<=stamp(document['timestamp'])<=stamp(original['observedAtUtc'])<=stamp(adopted['observedAtUtc']),
-      'Original normal-refresh invocation and later independent review time chain differ')
+      'activationGateReceiptSHA256':'summary-private.json','activationPlanStartedSHA256':'plan-started-private.json',
+      'activationInputManifestSHA256':'input-evidence-sha256-private.json',
+      'activationReviewInputManifestSHA256':'input-evidence-sha256-private.json',
+      'activationStrictReviewSHA256':'strict-gate-review-private.json','activationHistoricalQuotaEvidenceSHA256':'quota-private.json'}
+    root=BASE/'source/infra/aws/environments/personal'
+    plan=root/'private/processing-paused95-saved-plan-20261025-1'
+    for key,name in roles.items():
+        require(pins[key]==ACTIVATION_NATIVE_FILES[name]
+          and artifacts[key]=={'path':str(plan/name),'sha256':ACTIVATION_NATIVE_FILES[name]},
+          'Exact unused normal-plan artifact role differs: '+key)
+    # These aliases name the same genuine producer files. No separate adoption
+    # record or original blocked status is manufactured.
+    require(core.same(artifacts['activationPreparationReceiptSHA256'],artifacts['activationGateReceiptSHA256'])
+      and core.same(artifacts['activationInputManifestSHA256'],artifacts['activationReviewInputManifestSHA256']),
+      'Normal preparation/review shared-file roles must be byte/path identical')
+    provenance=binding['activationReview']
+    require(type(provenance) is dict and set(provenance)=={'preparer','reviewer'}
+      and provenance['preparer']=={'path':str(BASE/'frozen-prepare-paused95-processing-plan-20261025-1.py'),
+                                  'sha256':REVIEWED_PREPARER_SHA256}
+      and provenance['reviewer']=={'path':str(BASE/'frozen-review-paused95-processing-plan-20261025-1.py'),
+                                  'sha256':ACTIVATION_REVIEWER_SHA256}
+      and artifacts['activationIndependentReviewerSHA256']==provenance['reviewer'],
+      'Only the genuine normal preparer and pure reviewer are current provenance')
+    prepmod=load(provenance['preparer']['path'],REVIEWED_PREPARER_SHA256,'reviewed_paused95_preparer_constants')
+    reviewer=load(provenance['reviewer']['path'],ACTIVATION_REVIEWER_SHA256,'reviewed_paused95_pure_gate')
+    require(prepmod.HEAD==pins['sourceRevision'] and prepmod.STATE_SHA==CURRENT_RAW_STATE_SHA256
+      and prepmod.SERIAL==CURRENT_STATE_SERIAL and str(prepmod.STATE)==str(root/'state/terraform.tfstate')
+      and prepmod.REVIEWER_SHA==ACTIVATION_REVIEWER_SHA256 and str(prepmod.REVIEWER)==provenance['reviewer']['path']
+      and str(prepmod.PLAN)==str(plan),'Current95 preparer constants differ')
+    for name,digest in SOURCE_GATE_SHAS.items():pinned(root/name,digest)
+    for name,digest in ACTIVATION_NATIVE_FILES.items():pinned(plan/name,digest)
     manifest=json.loads(Path(artifacts['activationInputManifestSHA256']['path']).read_text())
-    review_manifest=json.loads(Path(artifacts['activationReviewInputManifestSHA256']['path']).read_text())
-    require(type(manifest) is dict and manifest and type(review_manifest) is dict
+    require(type(manifest) is dict and len(manifest)==57
       and manifest.get(str(root/'state/terraform.tfstate'))==CURRENT_RAW_STATE_SHA256
-      and manifest.get(provenance['preparer']['path'])==ACTIVATION_PREPARER_SHA256
-      and manifest.get(provenance['originalReviewer']['path'])==ORIGINAL_ACTIVATION_REVIEWER_SHA256
-      and all(review_manifest.get(name)==digest for name,digest in manifest.items())
-      and review_manifest.get(provenance['adopter']['path'])==ACTIVATION_ADOPTER_SHA256
-      and review_manifest.get(artifacts['activationIndependentReviewerSHA256']['path'])==ACTIVATION_REVIEWER_SHA256,
-      'Independent review must preserve the whole original input chain and separate source pins')
-    native_names={'fresh-function-inventory-private.json','fresh-quota-settings-private.json','fresh-root-identity-private.json',
-      'input-evidence-sha256-private.json','physical60-values-private.json','plan-private.log','plan-started-private.json',
-      'processing-plan-private.json','processing.tfplan','state-before-private.tfstate','summary-private.json'}
-    require(all(str(prepmod.PLAN/name) in review_manifest for name in native_names),'Independent review must retain all eleven original native files')
-    for name,digest in review_manifest.items():
+      and manifest.get(provenance['preparer']['path'])==REVIEWED_PREPARER_SHA256
+      and manifest.get(provenance['reviewer']['path'])==ACTIVATION_REVIEWER_SHA256
+      and manifest.get(str(plan/'quota-private.json'))==pins['activationHistoricalQuotaEvidenceSHA256'],
+      'Complete genuine normal-plan input anchors differ')
+    for name,digest in manifest.items():
         path=Path(name)
         require(path.is_absolute() and '..' not in path.parts and (path.is_relative_to(BASE)
           or path.is_relative_to(Path('/tmp/ecoguard-aws-tool-restore-20261024-1/terraform-data'))
@@ -400,6 +416,64 @@ def review_native_activation(binding, core, document, physical):
           and not any(v.lower() in {'.aws','credentials','token.json','application_default_credentials.json'} or v.startswith('.env') for v in path.parts),
           'Plan input escaped fixed evidence scope')
         pinned(path,digest)
+    gate=load(root/'check_processing_plan.py',SOURCE_GATE_SHAS['check_processing_plan.py'],'unchanged_source47_paused95_gate')
+    require(gate.LIVE_QUOTA_EVIDENCE_SHA256 is None,'Source quota default must remain inert')
+    gate.LIVE_QUOTA_EVIDENCE_SHA256=pins['activationHistoricalQuotaEvidenceSHA256']
+    quota=json.loads(Path(artifacts['activationHistoricalQuotaEvidenceSHA256']['path']).read_text())
+    require(document.get('format_version')=='1.2' and document.get('terraform_version')=='1.17.0'
+      and document.get('applyable') is True,'Native saved plan format differs')
+    raw_path=Path(artifacts['paused60RawStateSHA256']['path']);raw_bytes=raw_path.read_bytes();raw=json.loads(raw_bytes)
+    review_plan_shape(document,raw_addresses(raw),reviewer)
+    checked=reviewer.inspect_plan(gate,document,physical,image=binding['readonly']['workerImageUri'],
+      zip_filename=str(BASE/'artifacts/aws-personal-lambda-20261023-1.zip'),window_seconds=binding['context']['windowSeconds'],
+      quota_evidence=quota,quota_evidence_sha256=pins['activationHistoricalQuotaEvidenceSHA256'],review_time=stamp(document['timestamp']))
+    receipt=json.loads(Path(artifacts['activationStrictReviewSHA256']['path']).read_text())
+    review_independent_receipt(core,reviewer,checked,receipt,document,quota)
+    summary=json.loads(Path(artifacts['activationPreparationReceiptSHA256']['path']).read_text())
+    expected_summary={'status':'paused95-processing60-normal-saved-plan-review-passed','sourceRevision':pins['sourceRevision'],
+      'stateSHA256':CURRENT_RAW_STATE_SHA256,'serial':CURRENT_STATE_SERIAL,'lineage':pins['paused60StateLineage'],
+      'planExecuted':True,'planExitCode':0,'applyExecuted':False,'stateWritten':False,'initExecuted':False,'iamModified':False,
+      'cloudMutationCommandsInvoked':False,'fixtureSubmitted':False,'runtimeActivated':False,'applyAuthorized':False,
+      'maximumPlanCommands':1,'automaticRetryPermitted':False,'normalRefresh':True,'refreshOnly':False,'targetUsed':False,
+      'consumedPlanReplayed':False,'previousBindingUsedOnlyForImmutableSourceToolsAndTargets':True,
+      'currentCheckpointReconciliationSHA256':CURRENT_RECONCILIATION_SHA256,
+      'bootID':'ef7bbcb6-4608-4850-96b1-c4c002135397',
+      'credentialRouteProofSHA256':pins['cloudshellCredentialRouteObservationSHA256'],
+      'reviewerSHA256':ACTIVATION_REVIEWER_SHA256,'quotaReceiptSHA256':pins['activationHistoricalQuotaEvidenceSHA256'],
+      'physicalExportSHA256':pins['paused60PhysicalExportSHA256'],'inputManifestSHA256':pins['activationInputManifestSHA256'],
+      'startedSHA256':pins['activationPlanStartedSHA256'],'savedPlanSHA256':pins['activationSavedPlanSHA256'],
+      'planJSONSHA256':pins['activationPlanJSONSHA256'],'strictReviewSHA256':pins['activationStrictReviewSHA256'],
+      'managedResources':60,'creates':0,'updates':8,'noops':52,'deletes':0,'fullPhysicalPriorEqual':True,
+      'fullReviewedRefreshedPriorEqual':True,'stateSourceAndEvidenceUnchanged':True,'helperSHA256':REVIEWED_PREPARER_SHA256}
+    require(all(core.same(summary.get(k),v) for k,v in expected_summary.items()),'Genuine normal-plan PASS summary differs')
+    expected_argv=prepmod.expected_plan_argv(str(BASE/'artifacts/aws-personal-lambda-20261023-1.zip'))
+    require(expected_argv==[binding['tools']['terraform']['path'],'-chdir='+str(root),'plan','-input=false','-no-color',
+      '-refresh=true','-lock-timeout=60s','-var=deployment_stage=processing-bounded','-var=adopt_upload_notifications=true',
+      '-var=lambda_zip='+str(BASE/'artifacts/aws-personal-lambda-20261023-1.zip'),
+      '-var=worker_image='+binding['readonly']['workerImageUri'],'-var=inference_url='+prepmod.RUN,
+      '-out='+str(plan/'processing.tfplan')],'Only one exact new untargeted normal-refresh plan is reviewed')
+    started=json.loads(Path(artifacts['activationPlanStartedSHA256']['path']).read_text())
+    expected_started={'argv':expected_argv,'helperSHA256':REVIEWED_PREPARER_SHA256,'sourceRevision':pins['sourceRevision'],
+      'stateSHA256':CURRENT_RAW_STATE_SHA256,'serial':CURRENT_STATE_SERIAL,'quotaReceiptSHA256':pins['activationHistoricalQuotaEvidenceSHA256'],
+      'normalRefresh':True,'refreshOnly':False,'targetUsed':False,'maximumPlanCommands':1,'retryPermitted':False,
+      'consumedPlanSHAs':sorted(prepmod.CONSUMED_PLAN_SHAS)}
+    require(set(started)==set(expected_started)|{'startedAtUtc'} and all(core.same(started.get(k),v) for k,v in expected_started.items())
+      and stamp(started['startedAtUtc']).replace(microsecond=0)<=stamp(document['timestamp'])
+      <=stamp(summary['preparedAtUtc'])<=stamp(summary['observedAtUtc']), 'Normal invocation and success receipt time chain differ')
+    invoked=json.loads((plan/'normal-refresh-plan-started.json').read_text())
+    outcome=json.loads((plan/'normal-refresh-plan-outcome.json').read_text())
+    require(core.same(invoked,{'argv':expected_argv,'maximumCommands':1,'retryPermitted':False}) and outcome.get('exitCode')==0
+      and outcome.get('stdoutSHA256')==sha(plan/'normal-refresh-plan-stdout-private.bin')
+      and outcome.get('stderrSHA256')==sha(plan/'normal-refresh-plan-stderr-private.bin'), 'Actual native normal-plan outer command/outcome differs')
+    # Independently repeat the real state95 transition check from the already
+    # pinned producer, without running its main or state-apply entry point.
+    lib=load(prepmod.LIBRARY,prepmod.LIBRARY_SHA,'reviewed_completed_state95_library')
+    recon=Path(str(prepmod.RECON));old_plan=Path(str(lib.PLAN));restore=Path(str(prepmod.RESTORE))
+    prepmod.review_checkpoint_chain(lib,json.loads((recon/'summary-private.json').read_text()),raw_bytes,physical,
+      json.loads((old_plan/'refresh-only-plan-private.json').read_text()),json.loads((old_plan/'physical94-values-private.json').read_text()),
+      list(managed(physical['values']['root_module'])),binding['context']['targets'],
+      json.loads((restore/'summary.json').read_text()),json.loads((restore/'preflight-private.json').read_text()),
+      datetime.now(timezone.utc))
     return checked
 
 
@@ -647,7 +721,7 @@ def actual_drain_funding(context,transport,pause,*,clock=time.monotonic,utc_now=
 def credential_route_reference(binding):
     key='cloudshellCredentialRouteObservationSHA256'
     ref=binding['artifacts'][key]
-    require(ref=={'path':str(BASE/'cloudshell-existing-container-route-metadata-20261025-5.json'),'sha256':binding['actualPins'][key]},'Exact current-VM route artifact required')
+    require(ref=={'path':str(BASE/'cloudshell-existing-container-route-metadata-20261025-7.json'),'sha256':binding['actualPins'][key]},'Exact current-VM route artifact required')
     return ref
 
 

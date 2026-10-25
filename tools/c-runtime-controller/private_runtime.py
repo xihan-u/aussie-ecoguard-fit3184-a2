@@ -19,7 +19,7 @@ import uuid
 
 HEX = re.compile(r'[0-9a-f]{64}')
 REASONS = {'success', 'deadline', 'heartbeat', 'funding', 'verification', 'user-pause', 'partial-apply'}
-CREDENTIAL_ROUTE_GUARD_SHA256 = 'eed29e1e0e7cdb8be69fa6fdbb6d697b5e6ce4b9458e4e78bcf4b80e3feee205'
+CREDENTIAL_ROUTE_GUARD_SHA256 = 'c742bd1cb2a2cc28989fcc606c540c6a8bd0e2cce574678c95cc1f675e094d35'
 IDENTITY_KEYS = {'pid', 'pgid', 'sid', 'startTicks', 'uid', 'bootID', 'cmdlineSHA256', 'nonce'}
 
 

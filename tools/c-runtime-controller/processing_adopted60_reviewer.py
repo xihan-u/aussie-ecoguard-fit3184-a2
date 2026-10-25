@@ -1,10 +1,9 @@
-"""Pure review of a NEW normal-refresh adopted60 reactivation plan.
+"""Pure review of one NEW normal-refresh paused95 to active60 saved plan.
 
-No clients, subprocess, writes, original gate main or synthetic document rewrite.
-The actual raw85 stores an empty adopted notification and seven active controls.
-Its refreshed prior may differ ONLY by observed approved emergency reductions.
-This reviewer never
-authorizes apply or proves a plan's invocation mode from JSON alone.
+No clients, subprocess, writes or gate main. The parent preparer binds actual
+raw95/5de335 and full native physical export; this pure gate requires zero drift
+and exact full physical/prior values. Only eight existing runtime controls may
+update; output configuration is separate from live API pause. No apply authority.
 """
 import copy
 import json
@@ -26,70 +25,68 @@ def control_addresses(g):
     return g.UPDATES | {g.NOTIFICATION}
 
 
+def paused_profile(g, values, *, image, zip_filename):
+    """Direct original profile predicates, with actual paused95 cap2 retained."""
+    require(set(values) == g.WIRED | {g.NOTIFICATION}, 'Exact adopted paused60 inventory required')
+    for name, address in g.FUNCTIONS.items():
+        v = values[address]
+        require(type(v.get('reserved_concurrent_executions')) is int and v['reserved_concurrent_executions'] == 0,
+                'All eight paused reservations must be exactly zero')
+        require(v.get('role') == g.BASE.EXECUTION_ROLE and v.get('function_name') == g.PREFIX+'-'+name
+                and v.get('architectures') == ['x86_64'], 'Function identity differs')
+        env = v.get('environment', [])
+        require(len(env) == 1 and all(env[0].get('variables', {}).get(k) == expected
+                for k,expected in g.WIRING.ENV_BINDINGS.items())
+                and env[0]['variables'].get('ECO_GOOGLE_CREDENTIALS_FILE') == '/var/task/config/google-wif.json',
+                'Function Run/WIF binding differs')
+        if name == 'ingest':
+            require(v.get('package_type') == 'Image' and v.get('image_uri') == image
+                    and all(v.get(k) in (None, '') for k in ('filename','runtime','handler')),
+                    'Ingest immutable Image binding differs')
+        else:
+            require(v.get('package_type') == 'Zip' and v.get('runtime') == 'python3.12'
+                    and v.get('filename') == zip_filename
+                    and v.get('source_code_hash') == g.base64.b64encode(bytes.fromhex(g.WIRING.ZIP_SHA)).decode(),
+                    'Reviewed unchanged ZIP differs')
+    for name,address in g.MAPPINGS.items():
+        v = values[address]
+        cap = [{'maximum_concurrency':2}] if name in ('ingest','infer') else []
+        require(v.get('enabled') is False and g.same(v.get('state'),'Disabled') and g.same(v.get('scaling_config'),cap)
+                and v.get('event_source_arn') == f'arn:aws:sqs:{g.BASE.REGION}:{g.BASE.ACCOUNT}:{g.PREFIX}-{name}'
+                and v.get('function_name') == f'arn:aws:lambda:{g.BASE.REGION}:{g.BASE.ACCOUNT}:function:{g.PREFIX}-{name}'
+                and type(v.get('batch_size')) is int and v['batch_size'] == 1
+                and v.get('function_response_types') == ['ReportBatchItemFailures'],
+                'Disabled mapping identity/batch/retained cap differs')
+    require(all(values[a].get('state') == 'DISABLED' for a in g.RULES.values()), 'All paused schedules must be disabled')
+    require(values[g.MODULE+'aws_apigatewayv2_api.app[0]'].get('disable_execute_api_endpoint') is True,
+            'API endpoint must remain off')
+    signup = values[g.MODULE+'aws_cognito_user_pool.users'].get('admin_create_user_config', [])
+    require(len(signup) == 1 and signup[0].get('allow_admin_create_user_only') is True, 'Public signup must remain off')
+    require(values[g.BUCKET_POLICY].get('bucket') == g.BUCKET, 'Policy bucket differs')
+    scoped_pause_policy(g, values[g.BUCKET_POLICY].get('policy'))
+    checks = []
+    g.BASE.inspect_bucket_security(lambda suffix:values.get(g.MODULE+suffix, {}),
+                                  lambda name,ok:checks.append((name,bool(ok))), root_inventory_while_paused=True)
+    require(all(ok for _,ok in checks), 'Paused bucket privacy/security differs')
+    require(g.repaired_ecr_policy_is_scoped(values[g.FOCUS.POLICY]['policy'])
+            and values[g.FOCUS.POLICY].get('repository') == g.FOCUS.REPOSITORY,
+            'ECR retrieval policy differs')
+    value = values[g.NOTIFICATION]
+    require(value.get('id') == g.BUCKET
+            and g.same({k:v for k,v in value.items() if k != 'id'},g.notification(False)),
+            'Adopted paused notification must be completely empty and owned')
+
+
 def refreshed_pause(g, document, physical):
-    """Compare original raw-export values and genuine native prior in place."""
+    """Fresh normal prior must exactly equal the actual reconciled snapshot."""
     old = g.managed(physical['values']['root_module'])
     prior = g.managed(document['prior_state']['values']['root_module'])
-    expected_addresses = g.WIRED | {g.NOTIFICATION}
-    require(set(old) == set(prior) == expected_addresses and len(old) == 60,
+    require(set(old) == set(prior) == g.WIRED | {g.NOTIFICATION} and len(old) == 60,
             'Complete physical60/refreshed60 inventories required')
-    updates = control_addresses(g)
-    rows = document.get('resource_drift')
-    require(type(rows) is list and len(rows) <= 8
-            and len({row.get('address') for row in rows}) == len(rows)
-            and {row.get('address') for row in rows} <= updates,
-            'Only observed resources within the eight emergency reducers may drift')
-    for row in rows:
-        address = row['address']
-        change = row.get('change', {})
-        require(row.get('mode') == 'managed'
-                and row.get('provider_name') == 'registry.terraform.io/hashicorp/aws'
-                and change.get('actions') == ['update']
-                and not any(row.get(k) or change.get(k) for k in ('previous_address','deposed','importing','replace_paths'))
-                and not g.WIRING.unknown_paths(change.get('after_unknown', {}))
-                and g.same(change.get('before'), old[address])
-                and g.same(change.get('after'), prior[address]),
-                'Native drift must join complete exact old/current values without unknowns')
-    for address, before in old.items():
-        expected = copy.deepcopy(before)
-        if address in {g.FUNCTIONS[n] for n in ('ingest','infer','outbox')}:
-            require(type(before.get('reserved_concurrent_executions')) is int
-                    and before['reserved_concurrent_executions'] == -1,
-                    'Saved active function must be exactly unreserved')
-            expected['reserved_concurrent_executions'] = 0
-        elif address in {g.MAPPINGS[n] for n in ('ingest','infer')}:
-            require(before.get('enabled') is True
-                    and g.same(before.get('scaling_config'), [{'maximum_concurrency':2}]),
-                    'Saved active SQS mapping/cap differs')
-            # Exact native readback of the already-approved emergency disable.
-            # No timestamp/state field outside these two actual rows may differ.
-            mapping_name = next(n for n in ('ingest','infer') if address == g.MAPPINGS[n])
-            before_time, after_time = {'ingest':('2026-10-25T02:56:14Z','2026-10-25T02:56:38Z'),
-                                       'infer':('2026-10-25T02:56:14Z','2026-10-25T02:56:40Z')}[mapping_name]
-            require(g.same(before.get('state'),'Enabled')
-                    and g.same(before.get('last_modified'),before_time),
-                    'Exact original mapping operational readback differs')
-            expected['enabled'] = False
-            expected['state'] = 'Disabled'
-            expected['last_modified'] = after_time
-        elif address == g.RULES['outbox']:
-            require(g.same(before.get('state'),'ENABLED') and before.get('is_enabled') is True,
-                    'Saved active outbox state/known enabled mirror differs')
-            expected['state'] = 'DISABLED'
-            expected['is_enabled'] = False
-        elif address == g.BUCKET_POLICY:
-            require(g.same(json.loads(before['policy']), g.tls_policy()), 'Saved active policy differs')
-            scoped_pause_policy(g, prior[address].get('policy'))
-            expected['policy'] = prior[address]['policy']
-        elif address == g.NOTIFICATION:
-            require(before.get('id') == g.BUCKET
-                    and g.same({k:v for k,v in before.items() if k != 'id'}, g.notification(False)),
-                    'Actual saved adopted notification must already be exactly empty')
-        require(g.same(prior[address], expected),
-                'Refresh changed a field outside the exact eight emergency controls: '+address)
-    require({row['address'] for row in rows} == {a for a in old if not g.same(old[a], prior[a])},
-            'Every and only actual physical/prior difference must have its native drift row')
-    return old, prior
+    rows = document.get('resource_drift', [])
+    require(type(rows) is list and rows == [], 'New drift is not reviewed; preserve the native plan for independent review')
+    require(g.same(old,prior), 'Full refreshed prior differs from reconciled paused60 checkpoint')
+    return old,prior
 
 
 def inspect_plan(g, document, physical, *, image, zip_filename, window_seconds,
@@ -105,11 +102,9 @@ def inspect_plan(g, document, physical, *, image, zip_filename, window_seconds,
     old, prior = refreshed_pause(g, document, physical)
     future_root = document['planned_values']['root_module']
     future = g.managed(future_root)
-    # These are genuine values from each representation, never edited documents.
-    # The actual raw checkpoint already has an empty notification. Validate its
-    # existing59 active configuration separately; never manufacture a plan JSON.
-    g.profile({a:v for a,v in old.items() if a != g.NOTIFICATION}, active=True, adopted=False,
-              image=image, zip_filename=zip_filename)
+    # Validate original paused values directly; no synthetic rewrite passed to
+    # the old profile (which predates disabled mappings retaining cap2).
+    paused_profile(g,old,image=image,zip_filename=zip_filename)
     g.profile(future, active=True, adopted=True, image=image, zip_filename=zip_filename)
     require(set(future) == set(prior) and future[g.NOTIFICATION].get('id') == g.BUCKET,
             'Adopted resource must remain present with known exact bucket identity')
@@ -158,7 +153,10 @@ def inspect_plan(g, document, physical, *, image, zip_filename, window_seconds,
         elif address == g.RULES['outbox']:
             expected['state'] = 'ENABLED'
         elif address == g.BUCKET_POLICY:
-            expected['policy'] = old[address]['policy']
+            require(type(future[address].get('policy')) is str
+                    and g.same(json.loads(future[address]['policy']),g.tls_policy()),
+                    'Activation policy must be the complete exact TLS-only policy')
+            expected['policy'] = future[address]['policy']
         elif address == g.NOTIFICATION:
             expected['queue'] = g.notification(True)['queue']
         # Existing field-specific metadata unknown catalogue only. Notification
@@ -174,7 +172,7 @@ def inspect_plan(g, document, physical, *, image, zip_filename, window_seconds,
             and before_outputs['processing_enabled']['value'] is True
             and before_outputs['deployment_stage']['value'] == 'processing-bounded'
             and g.same(before_outputs['runtime_controls']['value'], g.controls(True, True)),
-            'Saved raw activation outputs differ; API pause is not state/config convergence')
+            'Saved stage output configuration differs; outputs are not live API control observations')
     changes = document.get('output_changes', {})
     require(set(changes) == g.OUTPUTS, 'Exactly eleven output change rows required')
     for name, row in changes.items():
@@ -183,11 +181,10 @@ def inspect_plan(g, document, physical, *, image, zip_filename, window_seconds,
                 and not g.WIRING.unknown_paths(row.get('after_unknown', False))
                 and row.get('before_sensitive') is False and row.get('after_sensitive') is False,
                 'Root output action/value/sensitivity differs: '+name)
-    return {'status':'offline-adopted60-processing-plan-passed','mode':'reactivate-adopted',
+    return {'status':'offline-paused95-processing-plan-passed','mode':'reactivate-paused-adopted',
             'priorManagedResources':60,'managedResources':60,'creates':0,'updates':8,'noops':52,'deletes':0,
-            'fullPhysicalPriorEqual':False,'physicalPriorFullyEqual':False,'fullReviewedRefreshedPriorEqual':True,
-            'reviewedEmergencyPauseDriftResources':len(document['resource_drift']),
-            'reviewedEmergencyPauseTargetAllowlist':8,'allOther52PhysicalValuesExact':True,
+            'fullPhysicalPriorEqual':True,'physicalPriorFullyEqual':True,'fullReviewedRefreshedPriorEqual':True,
+            'resourceDriftResources':0,'allOther52PhysicalValuesExact':True,
             'allElevenNativeOutputDescriptorsUnchanged':True,'savedRawStateNotificationAlreadyEmpty':True,
             'disabledMappingsRetainExistingCapTwo':True,'noNewIAMOrService':True,'securityUnknownsAllowed':False,
             'reviewedUnknownPaths':{a:p for a,p in paths.items() if p},'maximumReviewedWindowSeconds':window_seconds,

@@ -8,7 +8,7 @@
 **当前云厂商选择：** C 的个人部署路线是 AWS + GCP Cloud Run。作业 Spec 第2页允许自行选择厂商并要求至少两家云，Rubric 第7页明确列举 AWS + GCP；Oracle 不是必选厂商。Oracle 模板和未部署主机的记录属于较早路线。厂商选择符合要求，不等于实际跨云处理或整份作业已经验收通过。
 
 **C 部分个人环境最新记录（2026-10-25）：** AWS 当前60项资源，应用已恢复暂停；GCP私有推理环境13项资源。第3次单图尝试仅一次应用保存计划94c，exit0并通过激活验证；随后源对象不存在检查的 HeadObject 返回254，完整意图账本无业务种子或图片PUT。八项控制在 T0+262.019秒读回暂停，满足原600秒目标。后续10轮、547.989秒观察中，两轮S3桶读取超时，因此连续安全观察和fixture drain仍未通过；最后fallback再次读回全部8项暂停和边界有效。真实跨云图片／Lambda WIF媒体成功次数仍为 **0**。
-详见[三次实际尝试、恢复证据与剩余事项](docs/c-runtime-attempt-and-recovery-20261025.md)和[精选状态记录](evidence/c-runtime-attempts-status-20261025.json)。[默认停用源码快照](tools/c-runtime-controller/README.md)新增HeadObject严格JSON错误解析及安全诊断，8项新注入测试与9项启动测试通过；ARMFalse、60个实际pin待绑定，未更新云端V14。官方固定2.38.1 formatter已本地重现旧正则的格式兼容问题，但原生失败未保存stderr，不能断言这就是本次唯一根因。当前Terraform保存状态serial94描述激活配置，与API暂停存在待对账差异；不得写回旧serial85状态。GCP13的41项只读元数据检查通过，没有HTTP推理请求。个人报告尚未定稿，当前不宣称完成百分比。下面的核心交接测试记录来自10月8日。
+详见[三次实际尝试、恢复证据与剩余事项](docs/c-runtime-attempt-and-recovery-20261025.md)和[精选状态记录](evidence/c-runtime-attempts-status-20261025.json)。[默认停用源码快照](tools/c-runtime-controller/README.md)保留HeadObject严格JSON错误解析及安全诊断，并更新V15的正常计划证据链；8项fixture与9项启动注入测试属于本地验证，ARMFalse、60个实际pin待绑定，没有新的云端媒体尝试。官方固定2.38.1 formatter已本地重现旧正则的格式兼容问题，但原生失败未保存stderr，不能断言这就是本次唯一根因。随后同一refresh-only保存计划完成一次零资源动作的状态同步，当前serial95；新normal保存计划a927通过0创建/8更新/52不变审核，尚未apply。[checkpoint52源码与证据审核](docs/c-runtime-checkpoint52-review-20261025.md)保留V15的ARMFalse、60个待填pin及未绑定当前证明；pool2三组只读实测不代表540秒连续验收。不得写回旧serial94/85状态。GCP13的41项只读元数据检查通过，没有HTTP推理请求。个人报告尚未定稿，当前不宣称完成百分比。下面的核心交接测试记录来自10月8日。
 
 **核心实现已完成本轮交接；云端运行和访问已暂停，数据与配置保留。**
 AWS 的定时任务、队列处理、七个 Lambda 和 API 已停用；媒体桶也拒绝包括旧签名链接在内的数据读写。
@@ -99,12 +99,12 @@ Grounding DINO 提供候选框，SigLIP2 在同一裁剪上统一比较物种，
 | 云 | 当前项目状态 |
 |---|---|
 | AWS 课程账号 `360493183467` / `default` / us-east-1 | 10月8日历史记录：Cognito、私有 S3、5 张按请求计费 DynamoDB 表、4 个 SQS 工作队列及 DLQ、ECR、7 个 Lambda、HTTP API 保留；运行和访问暂停 |
-| AWS 个人账号 `011154879765` / `ecoguard-personal` | 10月25日：us-east-1个人环境60项资源，serial 85；应用暂停，实际跨云图片成功0，见[最新记录](docs/c-runtime-attempt-and-recovery-20261025.md) |
+| AWS 个人账号 `011154879765` / `ecoguard-personal` | 10月25日：us-east-1个人环境60项资源，serial 95；应用暂停，实际跨云图片成功0，见[最新记录](docs/c-runtime-attempt-and-recovery-20261025.md) |
 | Google `ecoguard-fit3184-jlii0474` | 10月8日历史记录：IAM/WIF 身份接线，账单未绑定，无计算部署 |
 | Google `ecoguard-fit3184-a2-2026` | 个人验证环境13项资源，私有Cloud Run及模型warmup已验证；实际Lambda角色调用尚未验证 |
 | Oracle | 较早路线的既有服务器模板；当时未找到可用主机、未部署应用。当前采用AWS + GCP，Oracle不是必选项 |
 
-历史交接中的“59项资源已部署并暂停”保留在10月24日记录；首次保存计划实际应用后成为60项，不能将旧59项状态覆盖到当前serial 85。
+历史交接中的“59项资源已部署并暂停”保留在10月24日记录；首次保存计划实际应用后成为60项，不能将旧59项状态覆盖到当前serial 95。
 
 课程 API `https://i4zicvj5s2.execute-api.us-east-1.amazonaws.com/api/v1` 当前关闭。
 Cognito pool 为 `us-east-1_9nR2hwyVJ`，client 为 `6io5inllom6a5l43038uhbluvi`；

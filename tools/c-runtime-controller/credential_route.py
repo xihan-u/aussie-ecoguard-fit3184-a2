@@ -13,8 +13,8 @@ from datetime import datetime, timezone
 from urllib.parse import urlsplit
 
 BASE = Path('/home/cloudshell-user/ecoguard-c-personal-20261023')
-PROOF_PATH = BASE/'cloudshell-existing-container-route-metadata-20261025-5.json'
-BOOT_ID = '0f3e8d4b-e8bb-4499-beb6-af72a9af3e60'
+PROOF_PATH = BASE/'cloudshell-existing-container-route-metadata-20261025-7.json'
+BOOT_ID = 'ef7bbcb6-4608-4850-96b1-c4c002135397'
 FULL_URI_SHA256 = '99462476951da2ecf1af43b97df026b14e2591a7c2937479a0a00ac0afc812df'
 PATH_SHA256 = 'a560d726b1605b942fda857778b836f10e0fea103fbb77f5836f9799340bb876'
 SELECTORS = ['AWS_CONTAINER_CREDENTIALS_FULL_URI', 'AWS_CONTAINER_AUTHORIZATION_TOKEN']

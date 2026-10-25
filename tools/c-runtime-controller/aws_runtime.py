@@ -50,7 +50,7 @@ BLOCKED_ENV = {'AWS_PROFILE','AWS_DEFAULT_PROFILE','AWS_CONFIG_FILE','AWS_SHARED
  'PYTHONPATH','PYTHONHOME','LD_PRELOAD','LD_LIBRARY_PATH','DYLD_INSERT_LIBRARIES','DYLD_LIBRARY_PATH'}
 # Only credential material already supplied to this process by CloudShell may
 # transit unchanged in memory to the pinned CLI. Nothing reads ~/.aws or exports it.
-CREDENTIAL_ROUTE_GUARD_SHA256 = 'eed29e1e0e7cdb8be69fa6fdbb6d697b5e6ce4b9458e4e78bcf4b80e3feee205'
+CREDENTIAL_ROUTE_GUARD_SHA256 = 'c742bd1cb2a2cc28989fcc606c540c6a8bd0e2cce574678c95cc1f675e094d35'
 CREDENTIAL_ENV = {'AWS_ACCESS_KEY_ID','AWS_SECRET_ACCESS_KEY','AWS_SESSION_TOKEN','AWS_SECURITY_TOKEN',
  'AWS_CONTAINER_CREDENTIALS_RELATIVE_URI','AWS_CONTAINER_CREDENTIALS_FULL_URI',
  'AWS_CONTAINER_AUTHORIZATION_TOKEN','AWS_CONTAINER_AUTHORIZATION_TOKEN_FILE'}
@@ -341,7 +341,7 @@ class RawReader:
             commands={'publicAccess':'get-public-access-block','ownership':'get-bucket-ownership-controls',
               'encryption':'get-bucket-encryption','publicStatus':'get-bucket-policy-status','cors':'get-bucket-cors',
               'value':'get-bucket-policy' if target=='bucket-policy' else 'get-bucket-notification-configuration'}
-            with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
                 futures={key:pool.submit(self.call,'s3api',operation,params,deadline) for key,operation in commands.items()}
                 readings={key:future.result(timeout=max(.001,deadline-self.now())) for key,future in futures.items()}
             require(self.now()<=deadline,'Whole six-read bucket group exceeded target deadline')

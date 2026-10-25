@@ -2,7 +2,7 @@
   "recordType": "selected-nonsecret-member-C-runtime-status",
   "date": "2026-10-25",
   "scope": "personal AWS+GCP deployment; not whole-team acceptance",
-  "preparedForPrivateCheckpoint": 51,
+  "preparedForPrivateCheckpoint": 52,
   "cloudActionsPerformedByThisRecord": false,
   "currentDeployedResourceCounts": {
     "AWS": 60,
@@ -11,13 +11,16 @@
   "actualSuccessfulMediaImages": 0,
   "automaticLambdaWIFModelSuccessVerified": false,
   "currentAWSNativeState": {
-    "serial": 94,
-    "sha256": "7bbb39cbcd34963f8c7c9c7fcc6c723b638fa8d04af51b3e7dfa2650029f1e2c",
+    "serial": 95,
+    "sha256": "5de33593233eed3023b35a6f359238f17a3b56cfd349ea64291581b939cf7fc5",
     "managedResources": 60,
-    "postAttempt3RawFileLocallyHashVerified": true,
     "savedOutputsDescribeActivePlanNotCurrentAPIControls": true,
     "declarativeConvergenceVerified": false,
-    "old85StateMayBeRestoredOverCurrentState": false
+    "old85StateMayBeRestoredOverCurrentState": false,
+    "currentRawFileLocallyHashVerified": true,
+    "stateOnlyReconciliationAppliedOnce": true,
+    "resourceActionsDuringStateReconciliation": 0,
+    "previous94StateMayBeRestoredOverCurrentState": false
   },
   "attempt1": {
     "savedPlanAppliedOnce": true,
@@ -209,7 +212,7 @@
     }
   ],
   "remainingAcceptance": [
-    "post-apply serial94/state-to-paused-API reconciliation and separately reviewed new controller/plan/authority; consumed94c never replayed",
+    "Bind current API/supervisor/GCP/funding/operator proofs and a new action-time authority to inert V15 and unused a927; consumed94c never replayed",
     "one actual automatic AWS-role WIF/image/model READY chain",
     "active-work pause and fixture-specific continuous drain plus Terraform convergence",
     "joint final-origin CORS/TLS and auth/isolation evidence; cloud video cadence with A/D",
@@ -326,5 +329,124 @@
     "nativeResultSummarySHA256": "0ae234a0f6cc5236457d6091d63b76d8fde348efd67fef0fdf4e4297ca80c01c",
     "nativePayloadFilesIndividuallyVerified": 92,
     "creditsFreshnessEstablishedByReader": false
+  },
+  "V15LocalCandidate": {
+    "status": "five-work-only-provenance-tests-and-independent-static-review-passed-not-cloud-tested",
+    "sourceSHA256": "cabf4cb23e2c9df4ed679bdd40acfab1852dacb61cdbe8257598e722032a6ecd",
+    "testReceiptSHA256": "60be44f97daf1e4acd2881f9f5ae98aa8865e3ce3c88b611cda6ebef779361cb",
+    "independentStaticReviewSHA256": "7bec26e14394e1c83f0a7ed1279ca184d35155fed89440861be6ad9b0779fc50",
+    "workOnlyTestsPassed": 5,
+    "linuxExternalToolHashStubsExplicit": true,
+    "privateOriginalsOrDependentTestsIncluded": false,
+    "changedFromV14": [
+      "review_plan_shape",
+      "review_paused60_chain",
+      "review_independent_receipt",
+      "review_native_activation",
+      "credential_route_reference-path-literal",
+      "exact-dependency-pins"
+    ],
+    "coreLifecycleOnceAuthoritySDKDrainUnchanged": true,
+    "armReviewed": false,
+    "activationPreparerPin": null,
+    "currentPausedAPIReceiptPin": null,
+    "actualPinsPendingCount": 60,
+    "releaseIncluded": false,
+    "repositorySnapshot": "tools/c-runtime-controller/SNAPSHOT.json",
+    "fourthMediaAttemptStarted": false,
+    "packagedExistingTests": {
+      "passed": 17,
+      "failed": 0,
+      "exitCode": 0,
+      "fixtureMethods": 8,
+      "startupMethods": 9,
+      "CLIOrSDKOrProcessOrThreadOrSignalOrCloudUsed": false
+    }
+  },
+  "state95Reconciliation": {
+    "status": "same-reviewed-refresh-only-binary-applied-once",
+    "savedPlanSHA256": "ed51be9f74dcf9d9707ab187c78d7735d53b65b6590b458bcd7308471bcdd62b",
+    "originalBlockedReviewPreserved": true,
+    "nativeJSONUnmodified": true,
+    "applyExitCode": 0,
+    "resourceActions": 0,
+    "reviewedPauseDriftResources": 7,
+    "unchangedResources": 53,
+    "noOpOutputDescriptors": 11,
+    "serial": 95,
+    "rawStateSHA256": "5de33593233eed3023b35a6f359238f17a3b56cfd349ea64291581b939cf7fc5",
+    "summarySHA256": "7de373531995b42d7da65b7882eedc21afb41eac1600cede6a963b61aafb8855",
+    "currentAPIPauseProofClaimed": false,
+    "terraformConfigurationConvergenceClaimed": false,
+    "rawFileIncludedInGit": false
+  },
+  "unusedPaused95NormalPlan": {
+    "status": "paused95-processing60-normal-saved-plan-review-passed",
+    "savedPlanSHA256": "a9271f1599a57f618e57ec1456bc56e4f01cac263a544afb10d7d26b59a77504",
+    "summarySHA256": "ae048a8fdb229fd984dc3e90049a3e7a9c3b62466e12a70b70c82a74cad65114",
+    "strictReviewSHA256": "689321401f207a8c95a080911e4884aca2f554b0c3d2de9626459ef8b9e60066",
+    "inputManifestSHA256": "3f3dd234b8e1c29ef44ff5e5f3a3ae5822512803ddfdcd21d248301721d0c9f4",
+    "nativeOriginalPayloadFilesVerified": 39,
+    "inputManifestEntries": 57,
+    "creates": 0,
+    "updates": 8,
+    "noops": 52,
+    "deletes": 0,
+    "resourceDriftResources": 0,
+    "fullPhysicalPriorEqual": true,
+    "allElevenOutputsUnchanged": true,
+    "applied": false,
+    "runtimeActivated": false,
+    "fixtureSubmitted": false,
+    "sourceAndState95Unchanged": true,
+    "planOrRawEvidenceIncludedInGit": false
+  },
+  "S3TwoWorkerMeasurement": {
+    "status": "three-current-VM-readonly-groups-passed",
+    "liveRuntimeSHA256": "88bd456dce12d44f6a1724a7c6831f0324e0b999aa31adbaf150f57e6e66ef53",
+    "summarySHA256": "018e810c451f98e9870192b6716d191457a5d82b342a1213391bf536f4f7aadc",
+    "managementReadsPerGroup": 6,
+    "groups": [
+      "bucket-policy",
+      "bucket-notifications",
+      "bucket-policy"
+    ],
+    "groupSeconds": [
+      6.375004539,
+      8.129232425,
+      5.359555789
+    ],
+    "sharedAbsoluteDeadlineSeconds": 10,
+    "peakConcurrency": 2,
+    "currentPausedPredicatesPassed": true,
+    "resourceMutations": 0,
+    "futureLatencyGuaranteeClaimed": false,
+    "continuous540SecondTailClaimed": false,
+    "rawProofIncludedInGit": false
+  },
+  "currentProofBinding": {
+    "C14": {
+      "status": "readonly-binding-inputs-collected",
+      "summarySHA256": "1c4406c2de9d282923310ef3d835f45d9a572d104730a23e3d90a78292bf6a3e",
+      "observedAtUtc": "2026-10-25T10:35:33.179514+00:00",
+      "originalsDownloadedAndIndependentlyHashVerified": true,
+      "boundInRepository": false
+    },
+    "supervisor8": {
+      "originalStatus": "blocked",
+      "originalSummarySHA256": "0383eea189af9ebefb028abfc1ccc8472f993c46d3b5b8e323956eea3c00261e",
+      "separateReadonlyCloseoutStatus": "two-child-local-capabilities-and-readonly-closeout-verified",
+      "closeoutSummarySHA256": "5affec9a4c5a19d65cfb7422c46b99fa1f65413ca05ebd7cd24cc3f449f9c91d",
+      "closeoutObservedAtUtc": "2026-10-25T10:37:45.485800+00:00",
+      "originalProbePassClaimed": false,
+      "originalBlockedPreserved": true,
+      "originalsDownloadedAndIndependentlyHashVerified": true,
+      "boundInRepository": false
+    },
+    "currentOriginalArchivePayloadFiles": 331,
+    "rawOriginalsIncludedInGit": false,
+    "GCP14": "console-reported41-read PASS; originals not yet locally verified at preparation",
+    "freshCombinedFundingEstablished": false,
+    "newOperatorAuthorityOrSeedCreated": false
   }
 }
