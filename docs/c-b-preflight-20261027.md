@@ -7,7 +7,8 @@ no runtime or data-access setting was changed by this checkpoint.
 
 ## Code available to the team
 
-The upstream repository `Jerry2003826/aussie-ecoguard-fit3184-a2` still has one
+At the initial 11:45 UTC read, the upstream repository
+`Jerry2003826/aussie-ecoguard-fit3184-a2` had one
 branch, `Jiarui/main`, at `f9a9e7a7fba7dae1b4534820527d132b6fb3a985`.
 Its last push is recorded as 13 October. Its `apps/web` tree exactly matches the
 local checkpoint52 tree, `e346eb49fca3272f9234c11c1ff0988fe2cd4bc4`.
@@ -17,6 +18,15 @@ there. This does not establish whether B has unpushed work or another private
 or separately named repository. If so, its repository, branch or commit is
 needed before deploying that version; it is not needed for C's independent
 configuration and deployment preparation.
+
+At the final readback, **Jerry2003826 had merged C's PR #1 at 11:50:03 UTC**
+on 27 October. The upstream `Jiarui/main` head became
+`00fd4ee1742113176abc88f21bd492e9ac50920f`. Its full source tree exactly
+matches C's published checkpoint52, so this is a squash merge of the existing
+C work, not a newer B frontend. The frontend tree remains unchanged and the
+39 local test results still apply to it. C merged this upstream commit into
+the working branch before publishing the preflight follow-up, preserving the
+team's history and avoiding a repeat PR for the already merged source.
 
 ## Completed checks
 

@@ -22,7 +22,9 @@
       ],
       "xihan-u/aussie-ecoguard-fit3184-a2": []
     },
-    "limit": "No newer B version was visible in these repositories; this does not inspect unpushed work, private repositories or separately named repositories."
+    "limit": "No newer B version was visible in these repositories; this does not inspect unpushed work, private repositories or separately named repositories.",
+    "initialObservationAtUtc": "2026-10-27T11:45:04.522011+00:00",
+    "initialObservationSupersededByMerge": true
   },
   "frontend": {
     "tests": {
@@ -154,5 +156,31 @@
     "Complete actual AWS-role media/WIF processing and continuous pause/drain acceptance."
   ],
   "newCloudResourceActions": false,
-  "realMediaSuccessCountUnchanged": 0
+  "realMediaSuccessCountUnchanged": 0,
+  "laterUpstreamReadback": {
+    "observedAtUtc": "2026-10-27T12:01:15.321020+00:00",
+    "pr1": {
+      "state": "closed",
+      "draft": false,
+      "merged": true,
+      "mergedAt": "2026-10-27T11:50:03Z",
+      "closedAt": "2026-10-27T11:50:03Z",
+      "mergedBy": "Jerry2003826",
+      "head": "e966290f379b15296d333055e5bf2e106b9ed218",
+      "mergeCommitSha": "00fd4ee1742113176abc88f21bd492e9ac50920f",
+      "base": "Jiarui/main"
+    },
+    "upstream": {
+      "defaultBranch": "Jiarui/main",
+      "head": "00fd4ee1742113176abc88f21bd492e9ac50920f",
+      "pushedAt": "2026-10-27T11:50:02Z",
+      "branches": [
+        {
+          "name": "Jiarui/main",
+          "head": "00fd4ee1742113176abc88f21bd492e9ac50920f"
+        }
+      ]
+    },
+    "upstreamFrontendTree": "e346eb49fca3272f9234c11c1ff0988fe2cd4bc4"
+  }
 }
